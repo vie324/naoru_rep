@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NAORU整体院 戦略レポート v6.0 | ブランドデザイン統合版</title>
+    <title>NAORU整体院 戦略レポート v7.0 | HPB原稿作成機能搭載</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -40,6 +40,7 @@
         .border-brand { border-color: var(--brand-color); }
         .hover-text-brand:hover { color: var(--brand-color); }
         .hover-bg-brand:hover { background-color: var(--brand-color); }
+        .ring-brand:focus { --tw-ring-color: var(--brand-color); }
 
         /* Loading Animation */
         .typing-indicator span {
@@ -87,6 +88,17 @@
         /* Modal */
         .modal { transition: opacity 0.25s ease; }
         body.modal-active { overflow-x: hidden; overflow-y: visible !important; }
+
+        /* AI Mode Toggle */
+        .ai-mode-btn {
+            @apply px-3 py-1.5 text-xs font-bold rounded-full transition-colors border border-slate-600;
+        }
+        .ai-mode-btn.active {
+            @apply bg-brand border-brand text-white;
+        }
+        .ai-mode-btn.inactive {
+            @apply bg-transparent text-slate-400 hover:text-white hover:border-slate-400;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -100,8 +112,8 @@
                     <i class="fa-solid fa-chart-simple"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold text-slate-800">NAORU整体 戦略レポート <span class="text-brand text-sm ml-2">v6.0</span></h1>
-                    <p class="text-xs text-slate-500">2025年12月実績 | ブランド統合デザイン版</p>
+                    <h1 class="text-xl font-bold text-slate-800">NAORU整体 戦略レポート <span class="text-brand text-sm ml-2">v7.0</span></h1>
+                    <p class="text-xs text-slate-500">2025年12月実績 | HPB原稿作成機能搭載</p>
                 </div>
             </div>
             
@@ -117,7 +129,7 @@
                 </div>
 
                 <!-- API Key Setting Button -->
-                <button onclick="toggleModal('apiKeyModal')" class="text-slate-500 hover-text-brand transition-colors" title="APIキー設定">
+                <button onclick="toggleModal('apiKeyModal')" class="text-slate-500 hover:text-brand transition-colors" title="APIキー設定">
                     <i class="fa-solid fa-gear text-xl"></i>
                 </button>
             </div>
@@ -251,7 +263,7 @@
                 </div>
                 <div class="w-full md:w-1/3">
                     <label class="block text-xs font-bold text-slate-500 mb-1">分析対象店舗を選択</label>
-                    <select id="deepDiveSelect" onchange="renderStoreDetails()" class="w-full bg-slate-50 border border-slate-300 text-slate-800 rounded-lg p-2.5 focus:ring-brand focus:border-brand">
+                    <select id="deepDiveSelect" onchange="renderStoreDetails()" class="w-full bg-slate-50 border border-slate-300 text-slate-800 rounded-lg p-2.5 focus:ring-brand focus:border-brand outline-none">
                         <!-- Options populated by JS -->
                     </select>
                 </div>
@@ -300,7 +312,7 @@
                         </div>
                     </div>
 
-                    <!-- Competitor Intelligence (Dynamic for All Stores) -->
+                    <!-- Competitor Intelligence -->
                     <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm relative overflow-hidden">
                         <div class="absolute top-0 right-0 p-4 opacity-5"><i class="fa-solid fa-chess text-4xl"></i></div>
                         <h4 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
@@ -319,29 +331,38 @@
                 <!-- Right: AI Sakai-kun Interface -->
                 <div class="lg:col-span-7">
                     <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-lg p-6 text-white h-full flex flex-col">
-                        <div class="flex items-center gap-3 mb-4">
-                            <!-- Sakai-kun Icon -->
-                            <div class="relative">
-                                <div class="bg-gradient-to-r from-brand to-rose-400 w-12 h-12 rounded-full flex items-center justify-center text-white border-2 border-white shadow">
-                                    <i class="fa-solid fa-user-tie text-2xl"></i>
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                            <div class="flex items-center gap-3">
+                                <!-- Sakai-kun Icon -->
+                                <div class="relative flex-shrink-0">
+                                    <div class="bg-gradient-to-r from-brand to-rose-400 w-12 h-12 rounded-full flex items-center justify-center text-white border-2 border-white shadow">
+                                        <i class="fa-solid fa-user-tie text-2xl"></i>
+                                    </div>
+                                    <span class="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-slate-800"></span>
                                 </div>
-                                <span class="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-slate-800"></span>
+                                <div>
+                                    <h3 class="font-bold text-lg">AI酒井くん <span class="text-xs font-normal text-slate-300 ml-2">Web戦略パートナー</span></h3>
+                                    <p class="text-xs text-slate-400">NAORUの強みを活かした提案</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 class="font-bold text-lg">AI酒井くん <span class="text-xs font-normal text-slate-300 ml-2">経営・人材戦略パートナー</span></h3>
-                                <p class="text-xs text-slate-400">競合データ・スタッフ実績を加味した具体的提案</p>
+                            
+                            <!-- Mode Toggle -->
+                            <div class="flex bg-slate-700 rounded-full p-1">
+                                <button onclick="setAiMode('analyze')" id="mode-analyze" class="ai-mode-btn active">現状分析</button>
+                                <button onclick="setAiMode('copywrite')" id="mode-copywrite" class="ai-mode-btn inactive">HPB原稿作成</button>
                             </div>
                         </div>
 
+                        <!-- Output Box -->
                         <div class="flex-grow bg-slate-800/50 rounded-lg border border-slate-700 p-4 mb-4 overflow-y-auto max-h-[600px] text-sm leading-relaxed" id="aiOutputBox">
                             <div class="flex flex-col items-center justify-center h-full text-slate-500 text-sm opacity-60">
                                 <i class="fa-solid fa-comments text-4xl mb-3"></i>
-                                <p class="text-center">左側で店舗を選択してください。<br>競合データを含めた分析を開始します。</p>
+                                <p class="text-center" id="aiPlaceholder">左側で店舗を選択してください。<br>競合データを含めた分析を開始します。</p>
                             </div>
                         </div>
 
                         <button onclick="runStoreAudit()" id="auditBtn" class="w-full bg-brand hover:bg-rose-400 text-white font-bold py-3 px-6 rounded-lg shadow-lg flex items-center justify-center gap-2 transition-all">
-                            <span>店舗・競合・スタッフ課題を分析する</span>
+                            <span id="auditBtnText">店舗・競合・スタッフ課題を分析する</span>
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
                     </div>
@@ -409,7 +430,7 @@
             return key;
         }
 
-        // --- 1. Data Definitions (Enriched with Competitors) ---
+        // --- 1. Data Definitions (Enriched) ---
         const storeData = [
             { 
                 id: 0, owner: "伊藤", store: "関内", cpa: 4583, rate: 53.8, newClients: 12, offer: 3500,
@@ -464,6 +485,7 @@
         ];
 
         let currentStoreId = 0;
+        let aiMode = 'analyze'; // 'analyze' or 'copywrite'
 
         // --- 2. UI Logic ---
         function switchTab(tabName) {
@@ -471,9 +493,25 @@
             document.getElementById('view-deepdive').classList.add('hidden');
             document.getElementById('tab-dashboard').classList.remove('active');
             document.getElementById('tab-deepdive').classList.remove('active');
-
             document.getElementById(`view-${tabName}`).classList.remove('hidden');
             document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        function setAiMode(mode) {
+            aiMode = mode;
+            const btnAnalyze = document.getElementById('mode-analyze');
+            const btnCopy = document.getElementById('mode-copywrite');
+            const auditBtnText = document.getElementById('auditBtnText');
+            
+            if (mode === 'analyze') {
+                btnAnalyze.classList.add('active'); btnAnalyze.classList.remove('inactive');
+                btnCopy.classList.add('inactive'); btnCopy.classList.remove('active');
+                auditBtnText.innerText = "店舗・競合・スタッフ課題を分析する";
+            } else {
+                btnCopy.classList.add('active'); btnCopy.classList.remove('inactive');
+                btnAnalyze.classList.add('inactive'); btnAnalyze.classList.remove('active');
+                auditBtnText.innerText = "HPB掲載用 原稿を生成する";
+            }
         }
 
         function initDeepDive() {
@@ -492,7 +530,6 @@
             currentStoreId = id;
             const store = storeData.find(d => d.id === id);
 
-            // Basic Info
             document.getElementById('detailName').innerText = store.store + "店";
             document.getElementById('detailOwner').innerText = store.owner + "オーナー";
             document.getElementById('detailNew').innerText = store.newClients + "人";
@@ -500,11 +537,9 @@
             document.getElementById('detailLink').href = store.url;
             document.getElementById('detailOfferPrice').innerText = `初回: ¥${store.offer.toLocaleString()}`;
             
-            // Border Color
             const border = document.getElementById('detailCardBorder');
             border.className = `bg-white rounded-xl shadow-sm p-6 border-l-4 ${store.owner === '伊藤' ? 'border-brand' : 'border-slate-600'}`;
 
-            // Staff List
             const staffContainer = document.getElementById('staffList');
             staffContainer.innerHTML = '';
             store.staff.forEach(s => {
@@ -528,7 +563,6 @@
                 staffContainer.innerHTML += html;
             });
 
-            // Competitor List
             const compContainer = document.getElementById('competitorList');
             const analysisText = document.getElementById('competitorAnalysisText');
             compContainer.innerHTML = '';
@@ -537,7 +571,6 @@
             store.competitors.forEach(c => {
                 const isCheaper = c.price < store.offer;
                 if(isCheaper) cheaperCompetitors++;
-                
                 compContainer.innerHTML += `
                     <div class="flex justify-between items-center text-sm p-2 rounded ${isCheaper ? 'bg-rose-50 border border-rose-100' : 'bg-slate-50 border border-slate-100'}">
                         <span class="text-slate-700">${c.name}</span>
@@ -549,7 +582,6 @@
                 `;
             });
 
-            // Auto Analysis Text
             if (cheaperCompetitors >= 2) {
                 analysisText.innerText = `競合より価格が高めです(負け: ${cheaperCompetitors}店舗)。高単価の理由(技術・検査)の訴求が必要です。`;
             } else if (cheaperCompetitors > 0) {
@@ -558,13 +590,8 @@
                 analysisText.innerText = `エリア内では安価な部類です。価格競争力はあります。`;
             }
 
-            // Reset AI Output
-            document.getElementById('aiOutputBox').innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full text-slate-500 text-sm opacity-60">
-                    <i class="fa-solid fa-comments text-4xl mb-3"></i>
-                    <p class="text-center">「${store.store}店」のデータをセットしました。<br>分析ボタンを押すと、AI酒井くんが回答します。</p>
-                </div>
-            `;
+            document.getElementById('aiPlaceholder').innerHTML = `「${store.store}店」のデータをセットしました。<br>ボタンを押すと、AI酒井くんが回答します。`;
+            document.getElementById('aiOutputBox').innerHTML = document.getElementById('aiOutputBox').querySelector('.flex').outerHTML; // Reset to placeholder
         }
 
         function populateComparisonTable() {
@@ -600,7 +627,7 @@
             });
         }
 
-        // --- 3. Gemini AI Logic (Sakai-kun) ---
+        // --- 3. Gemini AI Logic (Updated) ---
         async function runStoreAudit() {
             const apiKey = checkApiKey();
             if (!apiKey) { toggleModal('apiKeyModal'); return; }
@@ -612,17 +639,13 @@
             btn.disabled = true;
             btn.innerHTML = '<span>酒井くんが思考中...</span><div class="typing-indicator ml-2"><span></span><span></span><span></span></div>';
             
-            // Generate Contexts
-            let staffContext = store.staff.map(s => {
-                const rate = s.arrivals > 0 ? Math.round((s.joins / s.arrivals) * 100) : 0;
-                return `- ${s.name}: 入会率${rate}% (${s.joins}/${s.arrivals})`;
-            }).join("\n");
+            let prompt = "";
+            let staffContext = store.staff.map(s => `- ${s.name}: 入会率${s.arrivals > 0 ? Math.round((s.joins/s.arrivals)*100) : 0}%`).join("\n");
+            let compContext = store.competitors.map(c => `- ${c.name}: ¥${c.price} (${c.feature})`).join("\n");
 
-            let compContext = store.competitors.map(c => {
-                return `- ${c.name}: ¥${c.price} (${c.feature})`;
-            }).join("\n");
-
-            const prompt = `
+            if (aiMode === 'analyze') {
+                // --- Mode: Analysis ---
+                prompt = `
 あなたはNAORU整体院の戦略パートナー「酒井くん」です。
 以下の店舗データを分析し、具体的かつ辛口な改善策を提案してください。
 
@@ -638,11 +661,6 @@ ${compContext}
 【スタッフ別実績】
 ${staffContext}
 
-【特記事項】
-- 上大岡: CPA異常高騰(¥2.7万)、競合多数で埋没の可能性。
-- 溝の口: 安価(¥2200)だが入会率低い。スタッフ格差あり。
-- 鶴見: Meta広告の質が悪く入会率低下。
-
 【出力フォーマット(Markdown)】
 ### 🧐 酒井の眼 (現状分析)
 (競合との価格差、スタッフのパフォーマンスから見た根本原因)
@@ -652,6 +670,46 @@ ${staffContext}
 2. **[スタッフ教育]**: 具体的なスタッフ名を挙げた対策。
 3. **[オーナーへ]**: 実行すべきタスク。
 `;
+            } else {
+                // --- Mode: HPB Copywriting ---
+                prompt = `
+あなたはホットペッパービューティー(HPB)集客のプロ「酒井くん」です。
+NAORU整体 ${store.store}店の掲載ページ用原稿を3案作成してください。
+
+【前提: NAORU整体の強み】
+1. 最新のAIを用いた姿勢検査
+2. 世界基準の検査・施術技術
+3. 海外展開もする信頼性
+4. 根本改善のためのパーソナル指導
+
+【競合環境】
+${compContext}
+(※競合と差別化できるような「技術力」「AI分析」を強調してください)
+
+【作成要件（厳守）】
+1. **絵文字は使用禁止**
+2. 以下の文字数制限ギリギリを攻めてください（目指せ制限ジャスト）
+   - 全角1文字、半角0.5文字換算
+   - 少ないと損です。枠を使い切ってください。
+
+【出力項目】
+以下の3点セットを3パターン出力してください。
+
+**パターンA (技術・信頼重視)**
+1. **キャッチコピー** (50文字ちょうど)
+2. **ボディコピー** (50文字ちょうど)
+3. **クーポンタイトル** (36文字ちょうど)
+
+**パターンB (AI・検査重視)**
+... (同様)
+
+**パターンC (悩み解決・共感)**
+... (同様)
+
+※各項目の末尾に(約xx文字)と文字数を記載して確認できるようにしてください。
+`;
+            }
+
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                     method: 'POST',
@@ -667,7 +725,7 @@ ${staffContext}
                 outputBox.innerHTML = `<p class="text-rose-400 text-center mt-10">エラーが発生しました。<br><span class="text-xs">${error.message}</span></p>`;
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<span>店舗・競合・スタッフ課題を分析する</span><i class="fa-solid fa-paper-plane"></i>';
+                btn.innerHTML = document.getElementById('auditBtnText').innerText + ' <i class="fa-solid fa-paper-plane"></i>';
             }
         }
 
@@ -675,32 +733,18 @@ ${staffContext}
         function initComparisonCharts() {
             const cpaData = [...storeData].sort((a, b) => a.cpa - b.cpa);
             const rateData = [...storeData].sort((a, b) => b.rate - a.rate);
-            const ownerColors = { "伊藤": "#e57172", "福本": "#475569" }; // Brand vs Slate
+            const ownerColors = { "伊藤": "#e57172", "福本": "#475569" };
 
             new Chart(document.getElementById('cpaChart'), {
                 type: 'bar',
-                data: {
-                    labels: cpaData.map(d => d.store),
-                    datasets: [{ label: 'CPA (円)', data: cpaData.map(d => d.cpa), backgroundColor: cpaData.map(d => ownerColors[d.owner]), borderRadius: 4 }]
-                },
-                options: {
-                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, annotation: { annotations: { line1: { type: 'line', xMin: 5000, xMax: 5000, borderColor: '#e57172', borderWidth: 2, borderDash: [5, 5], label: { content: '目標 ¥5,000', enabled: true, position: 'end', color: '#e57172' } } } } },
-                    scales: { x: { beginAtZero: true } }
-                }
+                data: { labels: cpaData.map(d => d.store), datasets: [{ label: 'CPA (円)', data: cpaData.map(d => d.cpa), backgroundColor: cpaData.map(d => ownerColors[d.owner]), borderRadius: 4 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, annotation: { annotations: { line1: { type: 'line', xMin: 5000, xMax: 5000, borderColor: '#e57172', borderWidth: 2, borderDash: [5, 5], label: { content: '目標 ¥5,000', enabled: true, position: 'end', color: '#e57172' } } } } }, scales: { x: { beginAtZero: true } } }
             });
 
             new Chart(document.getElementById('rateChart'), {
                 type: 'bar',
-                data: {
-                    labels: rateData.map(d => d.store),
-                    datasets: [{ label: '入会率 (%)', data: rateData.map(d => d.rate), backgroundColor: rateData.map(d => ownerColors[d.owner]), borderRadius: 4 }]
-                },
-                options: {
-                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, annotation: { annotations: { line1: { type: 'line', xMin: 50, xMax: 50, borderColor: '#10b981', borderWidth: 2, borderDash: [5, 5], label: { content: '目標 50%', enabled: true, position: 'end', color: '#10b981' } } } } },
-                    scales: { x: { beginAtZero: true, max: 100 } }
-                }
+                data: { labels: rateData.map(d => d.store), datasets: [{ label: '入会率 (%)', data: rateData.map(d => d.rate), backgroundColor: rateData.map(d => ownerColors[d.owner]), borderRadius: 4 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, annotation: { annotations: { line1: { type: 'line', xMin: 50, xMax: 50, borderColor: '#10b981', borderWidth: 2, borderDash: [5, 5], label: { content: '目標 50%', enabled: true, position: 'end', color: '#10b981' } } } } }, scales: { x: { beginAtZero: true, max: 100 } } }
             });
         }
 

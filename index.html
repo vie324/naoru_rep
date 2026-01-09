@@ -466,40 +466,60 @@
     </footer>
 
     <!-- Logic Script -->
-    <script>
+   <script>
+        // ▼▼▼ あなたのGASのURLに書き換えてください ▼▼▼
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbycr6twPjm7mlwhXcxUPAFIyZK1yoPDUWe8vMrtz7X7wmUEA6yyDZs0AsJNeD24uhnNoA/exec";
+
         // --- 0. Utils & Globals ---
         let currentTargetYear = 2025;
         let currentTargetMonth = 12;
-        let currentInputMedia = 'hpb'; // 'hpb' or 'meta'
+        let currentInputMedia = 'hpb'; 
+        
+        // サーバーから取得したデータをここに格納します
+        let monthlyData = {}; 
+        let activeStoreData = [];
+        let chatHistory = [];
 
-        function toggleModal(modalID){
-            document.getElementById(modalID).classList.toggle("opacity-0");
-            document.getElementById(modalID).classList.toggle("pointer-events-none");
-            document.body.classList.toggle("modal-active");
-            if (!document.getElementById(modalID).classList.contains("opacity-0")) {
-                const key = localStorage.getItem("naoru_gemini_api_key");
-                if (key) document.getElementById("apiKeyInput").value = key;
-            }
-        }
-        function saveApiKey() {
-            const key = document.getElementById("apiKeyInput").value.trim();
-            if (key) {
-                localStorage.setItem("naoru_gemini_api_key", key);
-                document.getElementById("apiKeyAlert").classList.add("hidden");
-                toggleModal('apiKeyModal');
-                alert("APIキーを保存しました。");
-            } else alert("APIキーを入力してください。");
-        }
-        function checkApiKey() {
-            const key = localStorage.getItem("naoru_gemini_api_key");
-            if (!key) {
-                document.getElementById("apiKeyAlert").classList.remove("hidden");
-                return false;
-            }
-            return key;
+        // --- GAS通信用ヘルパー関数 ---
+        async function fetchFromGas(params) {
+            // パラメータをURLにつける
+            const query = new URLSearchParams(params).toString();
+            // 読み込み中などUI制御が必要ならここで
+            const res = await fetch(`${GAS_URL}?${query}`);
+            return await res.json();
         }
 
-        // --- 1. Data Structure ---
+        // --- 1. アプリ起動時 (サーバーからデータ取得) ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            // APIキー設定ボタン等を隠す（GASで管理するため不要）
+            const apiKeyAlert = document.getElementById("apiKeyAlert");
+            if(apiKeyAlert) apiKeyAlert.style.display = "none";
+            const settingBtn = document.querySelector('button[onclick="toggleModal(\'apiKeyModal\')"]');
+            if(settingBtn) settingBtn.style.display = "none";
+
+            // 全データをロード
+            await loadAllData();
+
+            // 画面初期化
+            initTargetDateSelect();
+            switchTab('dashboard');
+        });
+
+        async function loadAllData() {
+            try {
+                // ダッシュボード更新用データ取得
+                const res = await fetchFromGas({ action: "getAllData" });
+                if (res.status === "success") {
+                    monthlyData = res.data;
+                    console.log("Data loaded from GAS");
+                }
+            } catch(e) {
+                console.error("Load Error:", e);
+                alert("データの読み込みに失敗しました。GASのデプロイ設定(全員に公開)を確認してください。");
+            }
+        }
+
+        // --- 2. データ定義 & 計算ロジック ---
         const masterStores = [
             { id: 0, owner: "伊藤", store: "関内", url: "https://beauty.hotpepper.jp/kr/slnH000551741/", offer: 3500 },
             { id: 1, owner: "伊藤", store: "溝の口", url: "https://beauty.hotpepper.jp/kr/slnH000690916/", offer: 2200 },
@@ -507,18 +527,6 @@
             { id: 3, owner: "福本", store: "鶴見", url: "https://beauty.hotpepper.jp/kr/slnH000675689/", offer: 3300 },
             { id: 4, owner: "福本", store: "藤沢", url: "https://beauty.hotpepper.jp/kr/slnH000765038/", offer: 3300 }
         ];
-
-        // Monthly Data (LocalStorage)
-        let monthlyData = JSON.parse(localStorage.getItem("naoru_monthly_data")) || {};
-        
-        // Competitor Data (LocalStorage or Default)
-        let competitorData = JSON.parse(localStorage.getItem("naoru_competitor_data")) || {
-            0: [{name: "カラダファクトリー", price: 3980, feature: "大手"}, {name: "関内カイロ", price: 4500, feature: "老舗"}],
-            1: [{name: "溝の口整体院", price: 2980, feature: "地域密着"}, {name: "Re.Ra.Ku", price: 3500, feature: "リラク"}],
-            2: [{name: "あおぞら整骨院", price: 2600, feature: "最安"}, {name: "匠", price: 2980, feature: "個室"}],
-            3: [{name: "鶴見中央整骨院", price: 1500, feature: "保険"}, {name: "ラフィネ", price: 2200, feature: "リラク"}],
-            4: [{name: "藤沢整体院", price: 3980, feature: "優しさ"}, {name: "りらくる", price: 2980, feature: "深夜"}]
-        };
 
         const staticDetails = {
             0: { staff: ["福本", "福倉"] },
@@ -534,18 +542,6 @@
         const getMonthlyRecord = (storeId, year, month, media) => {
             const key = getKey(storeId, year, month, media);
             if (monthlyData[key]) return monthlyData[key];
-
-            // Defaults for 2025/12 HPB (Seed Data)
-            if (year === 2025 && month === 12 && media === 'hpb') {
-                const defaults = {
-                    0: { adSpend: 55000, newClients: 12, joins: 7, topPv: 1500, couponPv: 300, areaTopPv: 1200, areaCouponPv: 250, offerMemo: 3500 },
-                    1: { adSpend: 44000, newClients: 20, joins: 7, topPv: 2000, couponPv: 150, areaTopPv: 1200, areaCouponPv: 250, offerMemo: 2200 },
-                    2: { adSpend: 55000, newClients: 2, joins: 2, topPv: 300, couponPv: 50, areaTopPv: 1200, areaCouponPv: 250, offerMemo: 3500 },
-                    3: { adSpend: 55000, newClients: 8, joins: 3, topPv: 1200, couponPv: 200, areaTopPv: 1200, areaCouponPv: 250, offerMemo: 3300 },
-                    4: { adSpend: 55000, newClients: 6, joins: 3, topPv: 1000, couponPv: 180, areaTopPv: 1200, areaCouponPv: 250, offerMemo: 3300 }
-                };
-                if(defaults[storeId]) return defaults[storeId];
-            }
             return { adSpend: 0, newClients: 0, joins: 0, topPv: 0, couponPv: 0, areaTopPv: 0, areaCouponPv: 0, offerMemo: 0, ctr: 0, cpc: 0, cvr: 0, cpm: 0 };
         };
 
@@ -555,44 +551,224 @@
             return { newClients: 0, joins: 0 };
         };
 
-        let activeStoreData = [];
-
         function refreshActiveData() {
             activeStoreData = masterStores.map(s => {
-                // Dashboard uses HPB data by default for simplicity, but we load staff data for detail view
                 const rec = getMonthlyRecord(s.id, currentTargetYear, currentTargetMonth, 'hpb');
                 const cpa = rec.newClients > 0 ? Math.round(rec.adSpend / rec.newClients) : 0;
                 const rate = rec.newClients > 0 ? Math.round((rec.joins / rec.newClients) * 100) : 0;
                 
-                // Get Staff Data for this month (HPB)
                 const staffStats = staticDetails[s.id].staff.map(name => {
                     const sRec = getStaffRecord(s.id, currentTargetYear, currentTargetMonth, 'hpb', name);
-                    // Use seed for demo display if data missing in seed month
-                    let arrivals = sRec.newClients;
-                    let joins = sRec.joins;
-                    if(arrivals === 0 && currentTargetYear === 2025 && currentTargetMonth === 12) {
-                        // Demo data fallback logic can go here if needed
-                    }
-                    return { name, arrivals, joins };
+                    return { name, arrivals: sRec.newClients, joins: sRec.joins };
                 });
 
+                // 競合データもmonthlyDataから取得（なければ空）
+                const compKey = `${s.id}_competitors`;
+                const competitors = monthlyData[compKey] || [];
+
                 return {
-                    ...s,
-                    cpa: cpa,
-                    rate: rate,
+                    ...s, cpa, rate,
                     newClients: rec.newClients,
-                    topPv: rec.topPv || 0,
-                    couponPv: rec.couponPv || 0,
-                    areaTopPv: rec.areaTopPv || 0,
-                    areaCouponPv: rec.areaCouponPv || 0,
+                    topPv: rec.topPv || 0, couponPv: rec.couponPv || 0,
+                    areaTopPv: rec.areaTopPv || 0, areaCouponPv: rec.areaCouponPv || 0,
                     offerMemo: rec.offerMemo || 0,
                     staff: staffStats,
-                    competitors: competitorData[s.id] || []
+                    competitors: competitors
                 };
             });
         }
 
-        // --- UI Logic ---
+        // --- 3. 保存処理 (GASへ送信) ---
+        async function saveMonthlyData() {
+            const saveBtn = document.querySelector('button[onclick="saveMonthlyData()"]');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 保存中...';
+            saveBtn.disabled = true;
+
+            const storeId = parseInt(document.getElementById('inputStoreSelect').value);
+            const inputs = document.querySelectorAll('#inputTableBody input');
+            const promises = [];
+
+            // 店舗データ
+            inputs.forEach(input => {
+                const key = getKey(storeId, input.dataset.year, input.dataset.month, currentInputMedia);
+                if(!monthlyData[key]) monthlyData[key] = {};
+                monthlyData[key][input.dataset.field] = parseFloat(input.value) || 0;
+                
+                // GASへ保存リクエスト
+                promises.push(fetch(`${GAS_URL}?action=saveData&key=${key}&value=${JSON.stringify(monthlyData[key])}`));
+            });
+
+            // スタッフデータ
+            const staffInputs = document.querySelectorAll('.staff-input');
+            staffInputs.forEach(input => {
+                const key = getStaffKey(storeId, input.dataset.year, input.dataset.month, currentInputMedia, input.dataset.staff);
+                if(!monthlyData[key]) monthlyData[key] = {};
+                monthlyData[key][input.dataset.field] = parseInt(input.value) || 0;
+                promises.push(fetch(`${GAS_URL}?action=saveData&key=${key}&value=${JSON.stringify(monthlyData[key])}`));
+            });
+
+            try {
+                await Promise.all(promises);
+                alert('クラウドへデータを保存しました！');
+            } catch(e) {
+                alert('保存中にエラーが発生しました');
+                console.error(e);
+            } finally {
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+                refreshActiveData();
+                updateDashboardSummaries(); // ダッシュボード数値も更新
+            }
+        }
+
+        // --- 4. AI連携処理 (GAS経由でGemini呼び出し) ---
+        async function callGeminiApi(systemContext, userMessage) {
+            const container = document.getElementById('chatContainer');
+            
+            // ローディング表示
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = "loadingBubble";
+            loadingDiv.className = "chat-bubble ai";
+            loadingDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+            container.appendChild(loadingDiv);
+            container.scrollTop = container.scrollHeight;
+
+            try {
+                // GASへリクエスト
+                // ※長い文章はGETパラメータだと切れる可能性がありますが、
+                // 簡易実装のためこのまま行きます。長文エラーが出る場合はGAS側をdoPostにする必要があります。
+                const params = new URLSearchParams();
+                params.append("action", "callAi");
+                params.append("prompt", userMessage);
+                params.append("systemPrompt", systemContext);
+
+                const res = await fetch(`${GAS_URL}?${params.toString()}`);
+                const data = await res.json();
+                
+                document.getElementById('loadingBubble').remove();
+                if (data.status === "error") throw new Error(data.message);
+
+                const aiText = data.text;
+                // 履歴に追加
+                chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+                chatHistory.push({ role: "model", parts: [{ text: aiText }] });
+                
+                appendMessage('ai', aiText);
+
+            } catch (error) {
+                if(document.getElementById('loadingBubble')) document.getElementById('loadingBubble').remove();
+                appendMessage('system', `通信エラー: ${error.message}`);
+            }
+        }
+
+        async function analyzeReportText() {
+            const text = document.getElementById('reportPasteArea').value;
+            if (!text) { alert("レポートテキストを入力してください"); return; }
+
+            const btn = document.getElementById('parseBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 解析中...';
+
+            const storeId = parseInt(document.getElementById('inputStoreSelect').value);
+            const storeName = masterStores.find(s => s.id === storeId).store;
+
+            const prompt = `
+以下のテキストは整体院の実績レポートです。
+このテキストから「${storeName}店」に関連する月次データを抽出し、JSON形式で出力してください。
+(抽出対象: year, month, adSpend, newClients, joins, topPv, couponPv)
+JSONのみ出力してください。テキスト: """${text}"""`;
+
+            try {
+                // Gemini呼び出し (GAS経由)
+                const params = new URLSearchParams();
+                params.append("action", "callAi");
+                params.append("prompt", prompt);
+                
+                const res = await fetch(`${GAS_URL}?${params.toString()}`);
+                const data = await res.json();
+                if (data.status === "error") throw new Error(data.message);
+
+                // JSON抽出
+                let resultText = data.text.replace(/```json/g, '').replace(/```/g, '').trim();
+                const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) resultText = jsonMatch[0];
+                const parsed = JSON.parse(resultText);
+
+                // 変数へ反映 (保存はまだしない)
+                const pYear = parseInt(parsed.year) || new Date().getFullYear();
+                const pMonth = parseInt(parsed.month) || (new Date().getMonth() + 1);
+                const key = getKey(storeId, pYear, pMonth, currentInputMedia);
+
+                if (!monthlyData[key]) monthlyData[key] = {};
+                if(parsed.adSpend) monthlyData[key].adSpend = parseInt(parsed.adSpend);
+                if(parsed.newClients) monthlyData[key].newClients = parseInt(parsed.newClients);
+                if(parsed.joins) monthlyData[key].joins = parseInt(parsed.joins);
+                if(parsed.topPv) monthlyData[key].topPv = parseInt(parsed.topPv);
+                if(parsed.couponPv) monthlyData[key].couponPv = parseInt(parsed.couponPv);
+
+                // 画面更新
+                renderInputTable();
+                alert(`解析成功: ${pYear}年${pMonth}月のデータを入力表に反映しました。\n確定するには「保存」を押してください。`);
+
+            } catch (e) {
+                console.error(e);
+                alert("解析エラー: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-microchip"></i> 解析して入力表に反映';
+            }
+        }
+
+        async function updateCompetitorInfo() {
+            const btn = document.getElementById('compUpdateBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> AI調査中...';
+
+            const store = activeStoreData.find(d => d.id === currentStoreId);
+            const prompt = `
+あなたは市場調査のプロです。以下の店舗の周辺エリアにある「実在する競合整体院」を調査してください。
+対象: NAORU整体 ${store.store} (エリア: ${store.store}駅 周辺)
+タスク: 実在する競合店を5〜10店舗リストアップし、JSON配列のみで出力してください。
+形式: [{"name": "店名", "price": 2980, "feature": "特徴"}]`;
+
+            try {
+                const params = new URLSearchParams();
+                params.append("action", "callAi");
+                params.append("prompt", prompt);
+                const res = await fetch(`${GAS_URL}?${params.toString()}`);
+                const data = await res.json();
+                
+                if (data.status === "error") throw new Error(data.message);
+
+                let resultText = data.text.replace(/```json/g, '').replace(/```/g, '').trim();
+                const jsonMatch = resultText.match(/\[[\s\S]*\]/);
+                if (!jsonMatch) throw new Error("JSON not found");
+                
+                const newCompetitors = JSON.parse(jsonMatch[0]);
+
+                // 競合データの保存
+                const compKey = `${currentStoreId}_competitors`;
+                monthlyData[compKey] = newCompetitors;
+                
+                // GASへ保存
+                await fetch(`${GAS_URL}?action=saveData&key=${compKey}&value=${JSON.stringify(newCompetitors)}`);
+
+                refreshActiveData();
+                renderStoreDetails();
+                alert(`調査完了: ${newCompetitors.length}件の競合情報を更新しました。`);
+
+            } catch (e) {
+                console.error(e);
+                alert("競合調査エラー: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // --- 5. UI制御 (ほぼ変更なし、monthlyData参照へ変更) ---
         function switchTab(tabName) {
             document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.remove('active'));
@@ -613,14 +789,7 @@
             }
         }
 
-        // --- Data Input Logic (Multi-Channel & Staff) ---
-        function switchInputMedia(media) {
-            currentInputMedia = media;
-            document.getElementById('media-hpb').className = `media-switch-btn hpb ${media === 'hpb' ? 'active' : 'inactive'}`;
-            document.getElementById('media-meta').className = `media-switch-btn meta ${media === 'meta' ? 'active' : 'inactive'}`;
-            renderInputTable();
-        }
-
+        // --- Input Tab UI ---
         function initInputTab() {
             const select = document.getElementById('inputStoreSelect');
             if(select.options.length === 0) {
@@ -634,6 +803,13 @@
             renderInputTable();
         }
 
+        function switchInputMedia(media) {
+            currentInputMedia = media;
+            document.getElementById('media-hpb').className = `media-switch-btn hpb ${media === 'hpb' ? 'active' : 'inactive'}`;
+            document.getElementById('media-meta').className = `media-switch-btn meta ${media === 'meta' ? 'active' : 'inactive'}`;
+            renderInputTable();
+        }
+
         function renderInputTable() {
             const storeId = parseInt(document.getElementById('inputStoreSelect').value);
             const tbody = document.getElementById('inputTableBody');
@@ -644,14 +820,13 @@
             tbody.innerHTML = '';
             staffTbody.innerHTML = '';
 
-            // 1. Config Headers based on Media
+            // Headers
             if (currentInputMedia === 'hpb') {
                 thead.innerHTML = `<tr><th class="px-4 py-2 border-b w-24 text-center">年月</th><th class="px-2 py-2 border-b text-center w-24 bg-yellow-50">オファー(円)</th><th class="px-2 py-2 border-b text-center w-28">広告費</th><th class="px-2 py-2 border-b text-center w-20">新規</th><th class="px-2 py-2 border-b text-center w-20">入会</th><th class="px-2 py-2 border-b text-center w-20 bg-blue-50">TOP PV</th><th class="px-2 py-2 border-b text-center w-20 bg-blue-50">Cpn PV</th><th class="px-2 py-2 border-b text-center w-20 bg-slate-50">Area TOP</th><th class="px-2 py-2 border-b text-center w-20 bg-slate-50">Area Cpn</th><th class="px-2 py-2 border-b text-center bg-slate-100">CPA</th><th class="px-2 py-2 border-b text-center bg-slate-100">率</th></tr>`;
             } else {
                 thead.innerHTML = `<tr><th class="px-4 py-2 border-b w-24 text-center">年月</th><th class="px-2 py-2 border-b text-center w-24 bg-yellow-50">オファー(円)</th><th class="px-2 py-2 border-b text-center w-28">広告費</th><th class="px-2 py-2 border-b text-center w-20">新規</th><th class="px-2 py-2 border-b text-center w-20">入会</th><th class="px-2 py-2 border-b text-center w-20">CTR (%)</th><th class="px-2 py-2 border-b text-center w-20">CPC (円)</th><th class="px-2 py-2 border-b text-center w-20">CVR (%)</th><th class="px-2 py-2 border-b text-center w-20">CPM (円)</th><th class="px-2 py-2 border-b text-center bg-slate-100">CPA</th><th class="px-2 py-2 border-b text-center bg-slate-100">率</th></tr>`;
             }
 
-            // Staff Header
             let staffList = staticDetails[storeId].staff; 
             let staffHeaderHTML = `<tr><th class="px-4 py-2 border-b w-24 text-center">年月</th>`;
             staffList.forEach(name => { staffHeaderHTML += `<th class="px-2 py-2 border-b text-center bg-slate-50" colspan="2">${name}</th>`; });
@@ -660,7 +835,7 @@
             staffHeaderHTML += `</tr>`;
             staffThead.innerHTML = staffHeaderHTML;
 
-            // 2. Render Rows (2025-2026)
+            // Rows (2025-2026)
             [2025, 2026].forEach(year => {
                 for (let month = 1; month <= 12; month++) {
                     const rec = getMonthlyRecord(storeId, year, month, currentInputMedia);
@@ -698,237 +873,69 @@
             });
         }
 
-        function saveMonthlyData() {
-            const storeId = parseInt(document.getElementById('inputStoreSelect').value);
-            const inputs = document.querySelectorAll('#inputTableBody input');
-            inputs.forEach(input => {
-                const key = getKey(storeId, input.dataset.year, input.dataset.month, currentInputMedia);
-                if (!monthlyData[key]) monthlyData[key] = {};
-                monthlyData[key][input.dataset.field] = parseFloat(input.value) || 0;
-            });
-            const staffInputs = document.querySelectorAll('.staff-input');
-            staffInputs.forEach(input => {
-                const key = getStaffKey(storeId, input.dataset.year, input.dataset.month, currentInputMedia, input.dataset.staff);
-                if (!monthlyData[key]) monthlyData[key] = {};
-                monthlyData[key][input.dataset.field] = parseInt(input.value) || 0;
-            });
-            localStorage.setItem("naoru_monthly_data", JSON.stringify(monthlyData));
-            refreshActiveData();
-            renderInputTable();
-            alert('データを保存しました。');
-        }
-
-        // --- AI Auto Input (Smart Parser) FIXED ---
-        async function analyzeReportText() {
-            const apiKey = checkApiKey();
-            if (!apiKey) { toggleModal('apiKeyModal'); return; }
-
-            const text = document.getElementById('reportPasteArea').value;
-            if (!text) { alert("レポートテキストを入力してください"); return; }
-
-            const btn = document.getElementById('parseBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 解析中...';
-
-            const storeId = parseInt(document.getElementById('inputStoreSelect').value);
-            const storeName = masterStores.find(s => s.id === storeId).store;
-
-            const prompt = `
-以下のテキストは整体院の実績レポートです。
-このテキストから「${storeName}店」に関連する月次データを抽出し、JSON形式で出力してください。
-
-テキスト:
-"""
-${text}
-"""
-
-抽出対象 (すべて数値型、見つからない場合はnull):
-- year: 年 (例: 2025)
-- month: 月 (例: 12)
-- adSpend: 広告費
-- newClients: 新規数
-- joins: 入会数/成約数
-- topPv: TOPページPV
-- couponPv: クーポンPV
-
-※JSONのみ出力。
-`;
-
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await response.json();
-                
-                if (data.error) throw new Error(data.error.message);
-
-                let resultText = data.candidates[0].content.parts[0].text;
-                // Clean up markdown
-                resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
-                
-                // Fallback Regex for JSON extraction if model adds chatter
-                const jsonMatch = resultText.match(/\{[\s\S]*\}/);
-                if (jsonMatch) resultText = jsonMatch[0];
-
-                const parsed = JSON.parse(resultText);
-
-                // Fix values
-                const currentY = new Date().getFullYear();
-                const pYear = parseInt(parsed.year) || currentY;
-                const pMonth = parseInt(parsed.month) || (new Date().getMonth() + 1);
-
-                const key = getKey(storeId, pYear, pMonth, currentInputMedia);
-                if (!monthlyData[key]) monthlyData[key] = {};
-                
-                // Merge Data (Overwrite if found in report)
-                let updateCount = 0;
-                if(parsed.adSpend !== null && parsed.adSpend !== undefined) { monthlyData[key].adSpend = parseInt(parsed.adSpend); updateCount++; }
-                if(parsed.newClients !== null && parsed.newClients !== undefined) { monthlyData[key].newClients = parseInt(parsed.newClients); updateCount++; }
-                if(parsed.joins !== null && parsed.joins !== undefined) { monthlyData[key].joins = parseInt(parsed.joins); updateCount++; }
-                if(parsed.topPv !== null && parsed.topPv !== undefined) { monthlyData[key].topPv = parseInt(parsed.topPv); updateCount++; }
-                if(parsed.couponPv !== null && parsed.couponPv !== undefined) { monthlyData[key].couponPv = parseInt(parsed.couponPv); updateCount++; }
-
-                localStorage.setItem("naoru_monthly_data", JSON.stringify(monthlyData));
-                
-                // Refresh View
-                renderInputTable();
-                
-                if (updateCount > 0) {
-                    alert(`解析成功！\n${pYear}年${pMonth}月のデータ(${updateCount}項目)を自動入力しました。\n内容を確認して「保存」ボタンを押してください。`);
-                } else {
-                    alert("解析しましたが、有効な数値が見つかりませんでした。");
-                }
-
-            } catch (e) {
-                console.error(e);
-                alert("解析に失敗しました。AIがデータを読み取れませんでした。\nテキストの形式を確認してください。");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-microchip"></i> 解析して入力表に反映';
-            }
-        }
-
-        // --- Competitor Update (AI Real-time Search Logic) ---
-        async function updateCompetitorInfo() {
-            const apiKey = checkApiKey();
-            if (!apiKey) { toggleModal('apiKeyModal'); return; }
-
-            const store = activeStoreData.find(d => d.id === currentStoreId);
-            const btn = document.getElementById('compUpdateBtn');
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> AI調査中...';
-
-            const prompt = `
-あなたは市場調査のプロです。以下の店舗の周辺エリアにある「実在する競合整体院」を調査してください。
-
-対象店舗: NAORU整体 ${store.store} 
-エリア: ${store.store}駅 (神奈川県/東京都) 周辺
-
-タスク:
-Google MapsやHPBに掲載されているような、実在する競合店を5〜10店舗リストアップしてください。
-各店舗について、推定される「初回クーポン価格」と「ウリ（特徴）」を抽出してください。
-
-出力形式: JSON配列のみ (余計な文章は禁止)
-[
-  {"name": "店名", "price": 2980, "feature": "産後骨盤矯正に特化"},
-  {"name": "店名", "price": 3980, "feature": "駅直結・深夜まで営業"}
-]
-`;
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        contents: [{ parts: [{ text: prompt }] }],
-                        tools: [{ google_search: {} }] 
-                    })
-                });
-                
-                const data = await response.json();
-                
-                // Fallback logic for search tool errors
-                 let text = "";
-                if (data.error) {
-                     const response2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    const data2 = await response2.json();
-                    if (data2.error) throw new Error(data2.error.message);
-                    text = data2.candidates[0].content.parts[0].text;
-                } else {
-                    text = data.candidates[0].content.parts[0].text;
-                }
-
-                // Robust JSON Extraction
-                const jsonMatch = text.match(/\[[\s\S]*\]/);
-                if (!jsonMatch) throw new Error("JSON not found in response");
-                
-                const newCompetitors = JSON.parse(jsonMatch[0]);
-                
-                // Update
-                competitorData[currentStoreId] = newCompetitors;
-                localStorage.setItem("naoru_competitor_data", JSON.stringify(competitorData));
-                
-                // Refresh UI (without recursion)
-                refreshActiveData();
-                renderStoreDetails(); 
-                
-                alert(`AI調査完了！\n${newCompetitors.length}件の競合情報を更新しました。`);
-
-            } catch (error) {
-                console.error(error);
-                alert("競合調査に失敗しました。\nAPIキーが有効か、またはAIが情報を取得できませんでした。");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
-        }
-
-        // --- Other Init & Logic (Dashboard, Charts, Chat) ---
-        function initTargetDateSelect() {
-            const select = document.getElementById('targetDateSelect');
-            if(select.options.length > 0) return;
-            [2025, 2026].forEach(year => {
-                for (let month = 1; month <= 12; month++) {
-                    const opt = document.createElement('option');
-                    opt.value = `${year}-${month}`;
-                    opt.text = `${year}年${month}月実績`;
-                    if (year === currentTargetYear && month === currentTargetMonth) opt.selected = true;
-                    select.appendChild(opt);
-                }
-            });
-        }
-        function changeTargetDate() {
-            const val = document.getElementById('targetDateSelect').value;
-            const [y, m] = val.split('-');
-            currentTargetYear = parseInt(y);
-            currentTargetMonth = parseInt(m);
-            switchTab('dashboard');
-        }
-        function updateDashboardSummaries() {
-            const itoStores = activeStoreData.filter(d => d.owner === "伊藤");
-            const itoSpend = itoStores.reduce((sum, s) => sum + getMonthlyRecord(s.id, currentTargetYear, currentTargetMonth, 'hpb').adSpend, 0);
-            const itoNew = itoStores.reduce((sum, s) => sum + s.newClients, 0);
-            const itoJoins = itoStores.reduce((sum, s) => sum + getMonthlyRecord(s.id, currentTargetYear, currentTargetMonth, 'hpb').joins, 0);
-            document.getElementById('itoCpaDisplay').innerText = "¥" + (itoNew > 0 ? Math.round(itoSpend/itoNew).toLocaleString() : 0);
-            document.getElementById('itoRateDisplay').innerText = (itoNew > 0 ? Math.round((itoJoins/itoNew)*100) : 0) + "%";
-
-            const fukuStores = activeStoreData.filter(d => d.owner === "福本");
-            const fukuSpend = fukuStores.reduce((sum, s) => sum + getMonthlyRecord(s.id, currentTargetYear, currentTargetMonth, 'hpb').adSpend, 0);
-            const fukuNew = fukuStores.reduce((sum, s) => sum + s.newClients, 0);
-            const fukuJoins = fukuStores.reduce((sum, s) => sum + getMonthlyRecord(s.id, currentTargetYear, currentTargetMonth, 'hpb').joins, 0);
-            document.getElementById('fukuCpaDisplay').innerText = "¥" + (fukuNew > 0 ? Math.round(fukuSpend/fukuNew).toLocaleString() : 0);
-            document.getElementById('fukuRateDisplay').innerText = (fukuNew > 0 ? Math.round((fukuJoins/fukuNew)*100) : 0) + "%";
-        }
-
-        // Deep Dive Logic (Fixed Recursion)
+        // --- Deep Dive UI ---
         let currentStoreId = 0;
         let aiMode = 'analyze';
-        let chatHistory = [];
+
+        function initDeepDive() {
+            const select = document.getElementById('deepDiveSelect');
+            select.innerHTML = '';
+            activeStoreData.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.text = `${d.store} (${d.owner}) - CPA¥${d.cpa.toLocaleString()}`;
+                select.appendChild(opt);
+            });
+            currentStoreId = parseInt(select.value);
+            renderStoreDetails();
+            resetChatUI();
+        }
+
+        function renderStoreDetails() {
+            const store = activeStoreData.find(d => d.id === currentStoreId);
+            document.getElementById('detailName').innerText = store.store + "店";
+            document.getElementById('detailOwner').innerText = store.owner + "オーナー";
+            document.getElementById('detailNew').innerText = store.newClients + "人";
+            document.getElementById('detailCPA').innerText = "¥" + store.cpa.toLocaleString();
+            document.getElementById('detailLink').href = store.url;
+            
+            const displayOffer = store.offerMemo > 0 ? store.offerMemo : store.offer;
+            document.getElementById('detailOfferPrice').innerText = `初回: ¥${displayOffer.toLocaleString()}`;
+            
+            document.getElementById('detailTopPv').innerText = store.topPv.toLocaleString();
+            document.getElementById('detailAreaTopPv').innerText = `(Avg: ${store.areaTopPv.toLocaleString()})`;
+            document.getElementById('detailCouponPv').innerText = store.couponPv.toLocaleString();
+            document.getElementById('detailAreaCouponPv').innerText = `(Avg: ${store.areaCouponPv.toLocaleString()})`;
+
+            const border = document.getElementById('detailCardBorder');
+            border.className = `bg-white rounded-xl shadow-sm p-6 border-l-4 ${store.owner === '伊藤' ? 'border-brand' : 'border-slate-600'}`;
+
+            const staffContainer = document.getElementById('staffList');
+            staffContainer.innerHTML = '';
+            store.staff.forEach(s => {
+                const rate = s.arrivals > 0 ? Math.round((s.joins / s.arrivals) * 100) : 0;
+                let barColor = rate >= 50 ? 'bg-emerald-500' : (rate >= 30 ? 'bg-amber-400' : 'bg-rose-500');
+                staffContainer.innerHTML += `<div><div class="flex justify-between items-end mb-1"><span class="text-sm font-bold text-slate-700">${s.name}</span><span class="text-xs text-slate-500">成約${s.joins}/${s.arrivals}名 (<span class="font-bold text-slate-800">${rate}%</span>)</span></div><div class="progress-bar-bg"><div class="progress-bar-fill ${barColor}" style="width: ${rate}%"></div></div></div>`;
+            });
+
+            const compContainer = document.getElementById('competitorList');
+            compContainer.innerHTML = '';
+            if (store.competitors && store.competitors.length > 0) {
+                store.competitors.forEach(c => {
+                    const isCheaper = c.price < displayOffer;
+                    compContainer.innerHTML += `<div class="flex justify-between items-center text-sm p-2 rounded ${isCheaper ? 'bg-rose-50 border border-rose-100' : 'bg-slate-50 border border-slate-100'}"><span class="text-slate-700">${c.name}</span><div class="text-right"><span class="font-bold block">¥${c.price.toLocaleString()}</span><span class="text-[10px] text-slate-500">${c.feature}</span></div></div>`;
+                });
+            } else {
+                compContainer.innerHTML = '<p class="text-xs text-slate-400">競合データがありません。「AI調査開始」ボタンを押してください。</p>';
+            }
+        }
+
+        function changeStore() {
+            const select = document.getElementById('deepDiveSelect');
+            if (select) currentStoreId = parseInt(select.value);
+            renderStoreDetails();
+            resetChatUI();
+        }
 
         function setAiMode(mode) {
             aiMode = mode;
@@ -947,84 +954,6 @@ Google MapsやHPBに掲載されているような、実在する競合店を5�
                 auditBtnText.innerText = "HPB掲載用 原稿を生成する";
                 if(placeholder) placeholder.innerHTML = "原稿作成モードです。<br>下のボタンを押すと3パターン提案します。";
             }
-        }
-
-        function initDeepDive() {
-            const select = document.getElementById('deepDiveSelect');
-            select.innerHTML = '';
-            activeStoreData.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d.id;
-                opt.text = `${d.store} (${d.owner}) - CPA¥${d.cpa.toLocaleString()}`;
-                select.appendChild(opt);
-            });
-            
-            currentStoreId = parseInt(select.value);
-            renderStoreDetails();
-            resetChatUI();
-        }
-
-        function renderStoreDetails() {
-            // Renders ONLY the left panel details. No chat reset here.
-            const store = activeStoreData.find(d => d.id === currentStoreId);
-            
-            document.getElementById('detailName').innerText = store.store + "店";
-            document.getElementById('detailOwner').innerText = store.owner + "オーナー";
-            document.getElementById('detailNew').innerText = store.newClients + "人";
-            document.getElementById('detailCPA').innerText = "¥" + store.cpa.toLocaleString();
-            document.getElementById('detailLink').href = store.url;
-            
-            // Priority: Memo > Master
-            // store.offerMemo comes from getMonthlyRecord which checks localStorage
-            const displayOffer = store.offerMemo > 0 ? store.offerMemo : store.offer;
-            document.getElementById('detailOfferPrice').innerText = `初回: ¥${displayOffer.toLocaleString()}`;
-            
-            // PV (Safe Check)
-            const elTopPv = document.getElementById('detailTopPv');
-            if(elTopPv) elTopPv.innerText = store.topPv ? store.topPv.toLocaleString() : '-';
-            
-            const elAreaTop = document.getElementById('detailAreaTopPv');
-            if(elAreaTop) elAreaTop.innerText = `(Avg: ${store.areaTopPv ? store.areaTopPv.toLocaleString() : '-'})`;
-            
-            const elCpnPv = document.getElementById('detailCouponPv');
-            if(elCpnPv) elCpnPv.innerText = store.couponPv ? store.couponPv.toLocaleString() : '-';
-            
-            const elAreaCpn = document.getElementById('detailAreaCouponPv');
-            if(elAreaCpn) elAreaCpn.innerText = `(Avg: ${store.areaCouponPv ? store.areaCouponPv.toLocaleString() : '-'})`;
-
-            const border = document.getElementById('detailCardBorder');
-            border.className = `bg-white rounded-xl shadow-sm p-6 border-l-4 ${store.owner === '伊藤' ? 'border-brand' : 'border-slate-600'}`;
-
-            const staffContainer = document.getElementById('staffList');
-            staffContainer.innerHTML = '';
-            store.staff.forEach(s => {
-                const rate = s.arrivals > 0 ? Math.round((s.joins / s.arrivals) * 100) : 0;
-                let barColor = 'bg-slate-400';
-                if (rate >= 50) barColor = 'bg-emerald-500';
-                else if (rate >= 30) barColor = 'bg-amber-400';
-                else barColor = 'bg-rose-500';
-                staffContainer.innerHTML += `<div><div class="flex justify-between items-end mb-1"><span class="text-sm font-bold text-slate-700">${s.name}</span><span class="text-xs text-slate-500">成約${s.joins}/${s.arrivals}名 (<span class="font-bold text-slate-800">${rate}%</span>)</span></div><div class="progress-bar-bg"><div class="progress-bar-fill ${barColor}" style="width: ${rate}%"></div></div></div>`;
-            });
-
-            const compContainer = document.getElementById('competitorList');
-            compContainer.innerHTML = '';
-            if (store.competitors && store.competitors.length > 0) {
-                store.competitors.forEach(c => {
-                    const isCheaper = c.price < displayOffer;
-                    compContainer.innerHTML += `<div class="flex justify-between items-center text-sm p-2 rounded ${isCheaper ? 'bg-rose-50 border border-rose-100' : 'bg-slate-50 border border-slate-100'}"><span class="text-slate-700">${c.name}</span><div class="text-right"><span class="font-bold block">¥${c.price.toLocaleString()}</span><span class="text-[10px] text-slate-500">${c.feature}</span></div></div>`;
-                });
-            } else {
-                compContainer.innerHTML = '<p class="text-xs text-slate-400">競合データがありません。「AI調査開始」ボタンを押してください。</p>';
-            }
-        }
-
-        function changeStore() {
-            // Called by select change
-            const select = document.getElementById('deepDiveSelect');
-            if (select) currentStoreId = parseInt(select.value);
-            
-            renderStoreDetails();
-            resetChatUI(); // Only reset chat on manual store change
         }
 
         function resetChatUI() {
@@ -1048,124 +977,85 @@ Google MapsやHPBに掲載されているような、実在する競合店を5�
         }
 
         async function triggerAiAction() {
-            const apiKey = checkApiKey();
-            if (!apiKey) { toggleModal('apiKeyModal'); return; }
             const store = activeStoreData.find(d => d.id === currentStoreId);
             const customKnowledge = document.getElementById('customKnowledge').value;
             const displayOffer = store.offerMemo > 0 ? store.offerMemo : store.offer;
-
             let staffContext = store.staff.map(s => `- ${s.name}: 入会率${s.arrivals > 0 ? Math.round((s.joins/s.arrivals)*100) : 0}%`).join("\n");
             let compContext = store.competitors.map(c => `- ${c.name}: ¥${c.price} (${c.feature})`).join("\n");
 
-            let systemPrompt = `
-あなたはNAORU整体院の戦略パートナー「酒井くん」です。
-【分析対象 (${currentTargetYear}年${currentTargetMonth}月実績)】
-店舗: ${store.store} (${store.owner}オーナー)
-CPA: ¥${store.cpa.toLocaleString()} (目標¥5,000)
-入会率: ${store.rate}% (目標50%)
-自社初回オファー実績: ¥${displayOffer.toLocaleString()}
+            let systemPrompt = `あなたはNAORU整体院の戦略パートナー「酒井くん」です。\n対象: ${store.store}店\nCPA: ¥${store.cpa.toLocaleString()}\n入会率: ${store.rate}%\n競合:\n${compContext}\nスタッフ:\n${staffContext}\nユーザー指示:\n${customKnowledge}`;
+            
+            let userPrompt = aiMode === 'analyze' 
+                ? "店舗分析とオファー戦略、スタッフ教育方針を提案してください。"
+                : "HPB用のキャッチコピー(50文字)、ボディコピー(150文字)、クーポン名(36文字)を3案作成してください。";
 
-【Webアクセス状況】
-TOPページPV: ${store.topPv} (エリア平均: ${store.areaTopPv})
-クーポンページPV: ${store.couponPv} (エリア平均: ${store.areaCouponPv})
-
-【競合】
-${compContext}
-
-【スタッフ】
-${staffContext}
-
-【NAORUの強み】
-1. 最新AI姿勢検査
-2. 世界基準の検査・施術技術
-3. 海外展開
-4. パーソナル指導
-
-【ユーザーからの追加指示】
-${customKnowledge ? customKnowledge : "特になし"}
-`;
-
-            let userPrompt = "";
-            if (aiMode === 'analyze') {
-                userPrompt = `この店舗の現状を分析し、競合に勝つための「オファー戦略」と「スタッフ教育方針」を具体的に提案してください。
-PVデータ（エリア平均との乖離や遷移率）も踏まえて、Web上の問題点（写真、キャッチコピー、露出不足など）を鋭く指摘してください。`;
-            } else {
-                userPrompt = `この店舗のホットペッパービューティー掲載用の原稿を3パターン作成してください。
-
-**重要方針:**
-1. **キャッチーで広告的な表現**にしてください。「ただの説明」はNGです。
-2. **心理トリガー（限定性、ベネフィット、社会的証明、共感）**を刺激する言葉を選んでください。
-3. 文字数制限は**「絶対厳守」**です。1文字でも超えると掲載不可となります。
-
-**作成条件:**
-1. 絵文字禁止
-2. 文字数カウント: 全角1文字=1、半角1文字=0.5
-   - **キャッチコピー: 50文字以内 (40〜50文字狙い)**
-   - **ボディコピー: 150文字以内 (140〜150文字狙い)**
-   - **クーポンタイトル: 36文字以内 (30〜36文字狙い)**
-
-**出力形式:**
-各項目の末尾に必ず **(xx.x文字)** とカウントを記載してください。`;
-            }
-
-            appendMessage('user', aiMode === 'analyze' ? "現状分析をお願いします。" : "HPB原稿を作成してください。");
+            appendMessage('user', userPrompt);
             await callGeminiApi(systemPrompt, userPrompt);
         }
 
-        async function sendUserMessage() {
+        function sendUserMessage() {
             const input = document.getElementById('userChatInput');
             const text = input.value.trim();
             if (!text) return;
-            const apiKey = checkApiKey();
-            if (!apiKey) { toggleModal('apiKeyModal'); return; }
             input.value = '';
+            
             appendMessage('user', text);
-            let contextInjection = "";
-            if (chatHistory.length === 0) {
-                const store = activeStoreData.find(d => d.id === currentStoreId);
-                contextInjection = `(対象店舗: ${store.store}店) `;
-            }
-            await callGeminiApi("", contextInjection + text);
+            // 簡易的にコンテキストなしで送る（GAS側で履歴を持たないため）
+            callGeminiApi("", text);
         }
 
         function handleKeyPress(e) {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendUserMessage(); }
         }
 
-        async function callGeminiApi(systemContext, userMessage) {
-            const apiKey = localStorage.getItem("naoru_gemini_api_key");
-            const container = document.getElementById('chatContainer');
-            const loadingDiv = document.createElement('div');
-            loadingDiv.id = "loadingBubble";
-            loadingDiv.className = "chat-bubble ai";
-            loadingDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
-            container.appendChild(loadingDiv);
-            container.scrollTop = container.scrollHeight;
-
-            let contents = [...chatHistory];
-            if (systemContext) userMessage = systemContext + "\n\n" + userMessage;
-            contents.push({ role: "user", parts: [{ text: userMessage }] });
-
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: contents })
-                });
-                const data = await response.json();
-                document.getElementById('loadingBubble').remove();
-                if (data.error) throw new Error(data.error.message);
-                const aiText = data.candidates[0].content.parts[0].text;
-                chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-                chatHistory.push({ role: "model", parts: [{ text: aiText }] });
-                appendMessage('ai', aiText);
-            } catch (error) {
-                if(document.getElementById('loadingBubble')) document.getElementById('loadingBubble').remove();
-                appendMessage('system', `エラーが発生しました: ${error.message}`);
+        function toggleModal(modalID){
+            // 不要だがエラー防止のため残す
+            const m = document.getElementById(modalID);
+            if(m) {
+                m.classList.toggle("opacity-0");
+                m.classList.toggle("pointer-events-none");
             }
         }
 
-        // --- Charts ---
+        // --- Dashboard & Charts ---
         let cpaChart, rateChart;
+        function initTargetDateSelect() {
+            const select = document.getElementById('targetDateSelect');
+            if(select.options.length > 0) return;
+            [2025, 2026].forEach(year => {
+                for (let month = 1; month <= 12; month++) {
+                    const opt = document.createElement('option');
+                    opt.value = `${year}-${month}`;
+                    opt.text = `${year}年${month}月実績`;
+                    if (year === currentTargetYear && month === currentTargetMonth) opt.selected = true;
+                    select.appendChild(opt);
+                }
+            });
+        }
+        function changeTargetDate() {
+            const val = document.getElementById('targetDateSelect').value;
+            const [y, m] = val.split('-');
+            currentTargetYear = parseInt(y);
+            currentTargetMonth = parseInt(m);
+            switchTab('dashboard');
+        }
+
+        function updateDashboardSummaries() {
+            const itoStores = activeStoreData.filter(d => d.owner === "伊藤");
+            const itoSpend = itoStores.reduce((sum, s) => sum + getMonthlyRecord(s.id, currentTargetYear, currentTargetMonth, 'hpb').adSpend, 0);
+            const itoNew = itoStores.reduce((sum, s) => sum + s.newClients, 0);
+            const itoJoins = itoStores.reduce((sum, s) => sum + getMonthlyRecord(s.id, currentTargetYear, currentTargetMonth, 'hpb').joins, 0);
+            document.getElementById('itoCpaDisplay').innerText = "¥" + (itoNew > 0 ? Math.round(itoSpend/itoNew).toLocaleString() : 0);
+            document.getElementById('itoRateDisplay').innerText = (itoNew > 0 ? Math.round((itoJoins/itoNew)*100) : 0) + "%";
+
+            const fukuStores = activeStoreData.filter(d => d.owner === "福本");
+            const fukuSpend = fukuStores.reduce((sum, s) => sum + getMonthlyRecord(s.id, currentTargetYear, currentTargetMonth, 'hpb').adSpend, 0);
+            const fukuNew = fukuStores.reduce((sum, s) => sum + s.newClients, 0);
+            const fukuJoins = fukuStores.reduce((sum, s) => sum + getMonthlyRecord(s.id, currentTargetYear, currentTargetMonth, 'hpb').joins, 0);
+            document.getElementById('fukuCpaDisplay').innerText = "¥" + (fukuNew > 0 ? Math.round(fukuSpend/fukuNew).toLocaleString() : 0);
+            document.getElementById('fukuRateDisplay').innerText = (fukuNew > 0 ? Math.round((fukuJoins/fukuNew)*100) : 0) + "%";
+        }
+
         function initComparisonCharts() {
             const cpaData = [...activeStoreData].sort((a, b) => a.cpa - b.cpa);
             const rateData = [...activeStoreData].sort((a, b) => b.rate - a.rate);
@@ -1197,11 +1087,6 @@ PVデータ（エリア平均との乖離や遷移率）も踏まえて、Web上
                 tbody.appendChild(tr);
             });
         }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            checkApiKey();
-            switchTab('dashboard');
-        });
     </script>
 </body>
 </html>

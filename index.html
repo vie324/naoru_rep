@@ -266,7 +266,7 @@
                                 <p class="text-xl font-bold" id="detailCPA">-</p>
                             </div>
                         </div>
-                        <!-- PV Stats Mini View (Restored) -->
+                        <!-- PV Stats Mini View -->
                         <div class="mt-4 pt-4 border-t border-slate-100">
                             <p class="text-xs font-bold text-slate-500 mb-2">Webアクセス状況 (自店 vs エリア平均)</p>
                             <div class="grid grid-cols-2 gap-2 text-xs">
@@ -357,6 +357,26 @@
                     <h3 class="font-bold text-lg mb-2 flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-yellow-400"></i> AIスマート読取 (レポート一括入力)</h3>
                     <p class="text-xs text-slate-300 mb-4">チャットの報告文やPDF(テキストコピー)を貼り付けると、AIが解析して下表に自動入力します。</p>
                     
+                    <!-- HINT SECTION START -->
+                    <div class="mb-4 bg-slate-600/50 rounded-lg border border-slate-500 p-3 text-xs">
+                        <div class="flex justify-between items-center mb-2 cursor-pointer" onclick="document.getElementById('formatDetails').classList.toggle('hidden')">
+                            <span class="font-bold text-yellow-300"><i class="fa-solid fa-circle-info mr-1"></i> 精度を上げるための入力のコツ</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                        <div id="formatDetails" class="hidden text-slate-200 space-y-2">
+                            <p>以下のような形式で入力すると、AIが正確に認識しやすくなります。</p>
+                            <div class="bg-slate-800 p-2 rounded font-mono text-[10px] leading-relaxed border border-slate-600 select-all">
+                                2025年12月 関内店 (HPB実績)<br>
+                                広告費：55,000円<br>
+                                新規数：12名<br>
+                                入会数：7名<br>
+                                TOP PV：1,500 / クーポンPV：300
+                            </div>
+                            <p class="opacity-80">※「店舗名」「年月」が含まれていることが重要です。<br>※項目名は「広告費」「コスト」、「新規」「集客数」など一般的な言葉であれば認識します。</p>
+                        </div>
+                    </div>
+                    <!-- HINT SECTION END -->
+
                     <div class="smart-parser-area p-3 rounded-lg mb-4 bg-white border-2 border-dashed border-slate-300 hover:border-brand transition-colors">
                         <textarea id="reportPasteArea" class="w-full bg-white text-slate-800 text-sm p-3 outline-none h-32 placeholder-slate-400 resize-none font-medium" placeholder="ここにレポートのテキストを貼り付けてください...&#13;&#10;例：&#13;&#10;2025/12 関内店&#13;&#10;HPB新規: 12名&#13;&#10;広告費: 55000円..."></textarea>
                     </div>
@@ -422,7 +442,7 @@
 
     </main>
 
-    <!-- API Key Modal -->
+    <!-- API Key Modal (Same as before) -->
     <div id="apiKeyModal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
         <div class="modal-overlay absolute w-full h-full bg-slate-900 opacity-50"></div>
         <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded shadow-lg z-50 overflow-y-auto">
@@ -539,12 +559,15 @@
 
         function refreshActiveData() {
             activeStoreData = masterStores.map(s => {
+                // Dashboard uses HPB data by default for simplicity, but we load staff data for detail view
                 const rec = getMonthlyRecord(s.id, currentTargetYear, currentTargetMonth, 'hpb');
                 const cpa = rec.newClients > 0 ? Math.round(rec.adSpend / rec.newClients) : 0;
                 const rate = rec.newClients > 0 ? Math.round((rec.joins / rec.newClients) * 100) : 0;
                 
+                // Get Staff Data for this month (HPB)
                 const staffStats = staticDetails[s.id].staff.map(name => {
                     const sRec = getStaffRecord(s.id, currentTargetYear, currentTargetMonth, 'hpb', name);
+                    // Use seed for demo display if data missing in seed month
                     let arrivals = sRec.newClients;
                     let joins = sRec.joins;
                     if(arrivals === 0 && currentTargetYear === 2025 && currentTargetMonth === 12) {
@@ -590,7 +613,7 @@
             }
         }
 
-        // --- Data Input Logic ---
+        // --- Data Input Logic (Multi-Channel & Staff) ---
         function switchInputMedia(media) {
             currentInputMedia = media;
             document.getElementById('media-hpb').className = `media-switch-btn hpb ${media === 'hpb' ? 'active' : 'inactive'}`;
@@ -753,7 +776,6 @@ ${text}
 
                 // Fix values
                 const currentY = new Date().getFullYear();
-                // If year/month missing, default to current but warn
                 const pYear = parseInt(parsed.year) || currentY;
                 const pMonth = parseInt(parsed.month) || (new Date().getMonth() + 1);
 
@@ -827,20 +849,21 @@ Google MapsやHPBに掲載されているような、実在する競合店を5�
                 
                 const data = await response.json();
                 
-                // Fallback if search fails
+                // Fallback logic for search tool errors
+                 let text = "";
                 if (data.error) {
-                    // Retry without tools
                      const response2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                     });
                     const data2 = await response2.json();
                     if (data2.error) throw new Error(data2.error.message);
-                    data.candidates = data2.candidates;
+                    text = data2.candidates[0].content.parts[0].text;
+                } else {
+                    text = data.candidates[0].content.parts[0].text;
                 }
 
-                let text = data.candidates[0].content.parts[0].text;
-                // Regex extraction for JSON array
+                // Robust JSON Extraction
                 const jsonMatch = text.match(/\[[\s\S]*\]/);
                 if (!jsonMatch) throw new Error("JSON not found in response");
                 
@@ -850,10 +873,8 @@ Google MapsやHPBに掲載されているような、実在する競合店を5�
                 competitorData[currentStoreId] = newCompetitors;
                 localStorage.setItem("naoru_competitor_data", JSON.stringify(competitorData));
                 
-                // Refresh Active Data (Global)
+                // Refresh UI (without recursion)
                 refreshActiveData();
-                
-                // Re-render only the side panel (NO recursion)
                 renderStoreDetails(); 
                 
                 alert(`AI調査完了！\n${newCompetitors.length}件の競合情報を更新しました。`);
@@ -952,6 +973,9 @@ Google MapsやHPBに掲載されているような、実在する競合店を5�
             document.getElementById('detailNew').innerText = store.newClients + "人";
             document.getElementById('detailCPA').innerText = "¥" + store.cpa.toLocaleString();
             document.getElementById('detailLink').href = store.url;
+            
+            // Priority: Memo > Master
+            // store.offerMemo comes from getMonthlyRecord which checks localStorage
             const displayOffer = store.offerMemo > 0 ? store.offerMemo : store.offer;
             document.getElementById('detailOfferPrice').innerText = `初回: ¥${displayOffer.toLocaleString()}`;
             
@@ -1035,19 +1059,54 @@ Google MapsやHPBに掲載されているような、実在する競合店を5�
 
             let systemPrompt = `
 あなたはNAORU整体院の戦略パートナー「酒井くん」です。
-【分析対象 (${currentTargetYear}年${currentTargetMonth}月)】
+【分析対象 (${currentTargetYear}年${currentTargetMonth}月実績)】
 店舗: ${store.store} (${store.owner}オーナー)
-CPA: ¥${store.cpa.toLocaleString()} (目標¥5000)
+CPA: ¥${store.cpa.toLocaleString()} (目標¥5,000)
 入会率: ${store.rate}% (目標50%)
-自社初回: ¥${displayOffer.toLocaleString()}
-【競合】${compContext}
-【スタッフ】${staffContext}
-【追加指示】${customKnowledge}
-            `;
-            
+自社初回オファー実績: ¥${displayOffer.toLocaleString()}
+
+【Webアクセス状況】
+TOPページPV: ${store.topPv} (エリア平均: ${store.areaTopPv})
+クーポンページPV: ${store.couponPv} (エリア平均: ${store.areaCouponPv})
+
+【競合】
+${compContext}
+
+【スタッフ】
+${staffContext}
+
+【NAORUの強み】
+1. 最新AI姿勢検査
+2. 世界基準の検査・施術技術
+3. 海外展開
+4. パーソナル指導
+
+【ユーザーからの追加指示】
+${customKnowledge ? customKnowledge : "特になし"}
+`;
+
             let userPrompt = "";
-            if (aiMode === 'analyze') userPrompt = "現状分析と改善策を提案してください。";
-            else userPrompt = "HPB掲載用原稿を3パターン作成してください。(絵文字禁止、文字数厳守)";
+            if (aiMode === 'analyze') {
+                userPrompt = `この店舗の現状を分析し、競合に勝つための「オファー戦略」と「スタッフ教育方針」を具体的に提案してください。
+PVデータ（エリア平均との乖離や遷移率）も踏まえて、Web上の問題点（写真、キャッチコピー、露出不足など）を鋭く指摘してください。`;
+            } else {
+                userPrompt = `この店舗のホットペッパービューティー掲載用の原稿を3パターン作成してください。
+
+**重要方針:**
+1. **キャッチーで広告的な表現**にしてください。「ただの説明」はNGです。
+2. **心理トリガー（限定性、ベネフィット、社会的証明、共感）**を刺激する言葉を選んでください。
+3. 文字数制限は**「絶対厳守」**です。1文字でも超えると掲載不可となります。
+
+**作成条件:**
+1. 絵文字禁止
+2. 文字数カウント: 全角1文字=1、半角1文字=0.5
+   - **キャッチコピー: 50文字以内 (40〜50文字狙い)**
+   - **ボディコピー: 150文字以内 (140〜150文字狙い)**
+   - **クーポンタイトル: 36文字以内 (30〜36文字狙い)**
+
+**出力形式:**
+各項目の末尾に必ず **(xx.x文字)** とカウントを記載してください。`;
+            }
 
             appendMessage('user', aiMode === 'analyze' ? "現状分析をお願いします。" : "HPB原稿を作成してください。");
             await callGeminiApi(systemPrompt, userPrompt);

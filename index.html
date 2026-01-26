@@ -159,8 +159,17 @@
                     <button onclick="switchTab('deepdive')" id="tab-deepdive" class="tab-btn h-full flex items-center gap-2 px-3 text-sm font-medium transition-colors">
                         <i class="fa-solid fa-store"></i> 詳細・AI分析
                     </button>
+                    <button onclick="switchTab('competitor')" id="tab-competitor" class="tab-btn h-full flex items-center gap-2 px-3 text-sm font-medium transition-colors">
+                        <i class="fa-solid fa-crosshairs"></i> 競合分析
+                    </button>
+                    <button onclick="switchTab('forecast')" id="tab-forecast" class="tab-btn h-full flex items-center gap-2 px-3 text-sm font-medium transition-colors">
+                        <i class="fa-solid fa-chart-line"></i> 予測
+                    </button>
+                    <button onclick="switchTab('report')" id="tab-report" class="tab-btn h-full flex items-center gap-2 px-3 text-sm font-medium transition-colors">
+                        <i class="fa-solid fa-file-lines"></i> レポート
+                    </button>
                     <button onclick="switchTab('input')" id="tab-input" class="tab-btn h-full flex items-center gap-2 px-3 text-sm font-medium transition-colors">
-                        <i class="fa-solid fa-pen-to-square"></i> 実績データ管理
+                        <i class="fa-solid fa-pen-to-square"></i> データ管理
                     </button>
                 </div>
                 <!-- Store Management Btn -->
@@ -469,7 +478,257 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- TAB 3: DATA INPUT                          -->
+        <!-- TAB 3: COMPETITOR ANALYSIS                 -->
+        <!-- ========================================== -->
+        <div id="view-competitor" class="space-y-8 hidden">
+            <section class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
+                <h2 class="text-2xl font-bold mb-2 flex items-center gap-3">
+                    <i class="fa-solid fa-crosshairs text-3xl"></i> 競合分析ダッシュボード
+                </h2>
+                <p class="text-sm opacity-90">ホットペッパービューティーの競合店舗をリアルタイムでトラッキング・分析</p>
+            </section>
+
+            <!-- Competitor Tracking Section -->
+            <section class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-radar text-indigo-600"></i> 競合店舗リアルタイムトラッキング
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">エリア</label>
+                        <input type="text" id="competitorArea" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="例: 渋谷">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">サービス種類</label>
+                        <input type="text" id="competitorService" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" value="整体">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="trackCompetitors()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass"></i> 競合を検索
+                        </button>
+                    </div>
+                </div>
+                <div id="competitorResults" class="mt-6"></div>
+            </section>
+
+            <!-- Ranking Monitor Section -->
+            <section class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-ranking-star text-amber-500"></i> 検索順位モニター
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">キーワード（複数可、カンマ区切り）</label>
+                        <input type="text" id="rankingKeywords" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="例: 渋谷 整体, 腰痛 新宿">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">自店舗名</label>
+                        <select id="rankingStoreSelect" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm"></select>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="checkRankings()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-chart-line"></i> 順位チェック
+                        </button>
+                    </div>
+                </div>
+                <div id="rankingResults" class="mt-6"></div>
+            </section>
+
+            <!-- Review Sentiment Analysis -->
+            <section class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-comments text-green-600"></i> 競合口コミ感情分析
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">店舗URL</label>
+                        <input type="text" id="reviewShopUrl" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="https://beauty.hotpepper.jp/...">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="analyzeReviews()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-brain"></i> AI分析
+                        </button>
+                    </div>
+                </div>
+                <div id="reviewAnalysisResults" class="mt-6"></div>
+            </section>
+
+            <!-- Market Analysis -->
+            <section class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-blue-600"></i> エリア相場分析
+                </h3>
+                <div id="marketAnalysisResults"></div>
+            </section>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: FORECAST & PREDICTION               -->
+        <!-- ========================================== -->
+        <div id="view-forecast" class="space-y-8 hidden">
+            <section class="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl shadow-lg p-6 text-white">
+                <h2 class="text-2xl font-bold mb-2 flex items-center gap-3">
+                    <i class="fa-solid fa-crystal-ball text-3xl"></i> 予測＆シミュレーション
+                </h2>
+                <p class="text-sm opacity-90">AI駆動の来店数予測とROIシミュレーション</p>
+            </section>
+
+            <!-- Customer Prediction -->
+            <section class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-emerald-600"></i> 来店数予測モデル
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">予測対象店舗</label>
+                        <select id="forecastStoreSelect" onchange="runPrediction()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">予測期間</label>
+                        <select id="forecastPeriod" onchange="runPrediction()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                            <option value="1">来月</option>
+                            <option value="3">3ヶ月後</option>
+                            <option value="6">6ヶ月後</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="predictionResults" class="mt-6"></div>
+                <div class="mt-6">
+                    <div class="chart-container" style="height: 400px;"><canvas id="predictionChart"></canvas></div>
+                </div>
+            </section>
+
+            <!-- Advanced Budget Optimizer -->
+            <section class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-blue-600"></i> 広告予算最適化AI
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">目標新規数</label>
+                        <input type="number" id="optTargetNew" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="30">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">目標ROI (%)</label>
+                        <input type="number" id="optTargetRoi" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="200">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">予算制約</label>
+                        <input type="number" id="optBudgetLimit" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="300000">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="optimizeBudget()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors">
+                            最適化実行
+                        </button>
+                    </div>
+                </div>
+                <div id="budgetOptimizationResults" class="mt-6"></div>
+            </section>
+
+            <!-- Seasonality Analysis -->
+            <section class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-days text-purple-600"></i> シーズナリティ分析
+                </h3>
+                <div class="chart-container" style="height: 400px;"><canvas id="seasonalityChart"></canvas></div>
+            </section>
+
+            <!-- LTV Analysis -->
+            <section class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-coins text-yellow-600"></i> LTV（顧客生涯価値）分析
+                </h3>
+                <div id="ltvAnalysisResults"></div>
+                <div class="mt-6">
+                    <div class="chart-container" style="height: 300px;"><canvas id="ltvChart"></canvas></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 5: REPORTS                             -->
+        <!-- ========================================== -->
+        <div id="view-report" class="space-y-8 hidden">
+            <section class="bg-gradient-to-r from-rose-600 to-pink-600 rounded-xl shadow-lg p-6 text-white">
+                <h2 class="text-2xl font-bold mb-2 flex items-center gap-3">
+                    <i class="fa-solid fa-file-lines text-3xl"></i> レポート＆エクスポート
+                </h2>
+                <p class="text-sm opacity-90">エグゼクティブサマリー＆詳細レポートの自動生成</p>
+            </section>
+
+            <!-- Executive Summary -->
+            <section class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-amber-500"></i> エグゼクティブサマリー
+                    </h3>
+                    <button onclick="generateExecutiveSummary()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> AIサマリー生成
+                    </button>
+                </div>
+                <div id="executiveSummaryContent" class="prose max-w-none"></div>
+            </section>
+
+            <!-- Benchmark Report -->
+            <section class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-radar text-blue-600"></i> 競合ベンチマークレポート
+                </h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <div class="chart-container" style="height: 350px;"><canvas id="benchmarkRadarChart"></canvas></div>
+                    </div>
+                    <div id="benchmarkTable"></div>
+                </div>
+            </section>
+
+            <!-- Export Section -->
+            <section class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-download text-green-600"></i> データエクスポート
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button onclick="exportToPDF()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-file-pdf"></i> PDF出力
+                    </button>
+                    <button onclick="exportToExcel()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-file-excel"></i> Excel出力
+                    </button>
+                    <button onclick="exportToJSON()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-file-code"></i> JSON出力
+                    </button>
+                </div>
+            </section>
+
+            <!-- Automated Reporting Schedule -->
+            <section class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-clock text-purple-600"></i> 自動レポート配信設定
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">配信先メール</label>
+                        <input type="email" id="reportEmail" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="example@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">配信頻度</label>
+                        <select id="reportFrequency" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm">
+                            <option value="daily">毎日</option>
+                            <option value="weekly">毎週</option>
+                            <option value="monthly">毎月</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="setupAutomatedReporting()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors">
+                            設定保存
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 6: DATA INPUT                          -->
         <!-- ========================================== -->
         <div id="view-input" class="space-y-8 hidden">
             <!-- AI Auto Input -->
@@ -708,6 +967,12 @@
             } else if (tabName === 'deepdive') {
                 refreshActiveData();
                 initDeepDive();
+            } else if (tabName === 'competitor') {
+                initCompetitorTab();
+            } else if (tabName === 'forecast') {
+                initForecastTab();
+            } else if (tabName === 'report') {
+                initReportTab();
             } else if (tabName === 'input') {
                 initInputTab();
             }
@@ -1602,6 +1867,845 @@
             });
         }
         
+        // ===========================================
+        // NEW TAB FUNCTIONS: COMPETITOR ANALYSIS
+        // ===========================================
+
+        const BACKEND_API = 'http://localhost:3001';
+        let competitorCache = {};
+
+        function initCompetitorTab() {
+            // Initialize store select for ranking monitor
+            const rankingSelect = document.getElementById('rankingStoreSelect');
+            rankingSelect.innerHTML = '';
+            masterStores.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.store;
+                opt.text = `${s.store}店`;
+                rankingSelect.appendChild(opt);
+            });
+        }
+
+        async function trackCompetitors() {
+            const area = document.getElementById('competitorArea').value.trim();
+            const service = document.getElementById('competitorService').value.trim();
+
+            if (!area) {
+                alert('エリアを入力してください');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('competitorResults');
+            resultsDiv.innerHTML = '<div class="text-center py-8"><i class="fa-solid fa-spinner fa-spin text-4xl text-indigo-600"></i><p class="mt-2 text-slate-600">競合店舗を検索中...</p></div>';
+
+            try {
+                const response = await fetch(`${BACKEND_API}/api/competitors/track`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ area, service })
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                displayCompetitorResults(result.data, result.cached);
+
+                // Also run market analysis
+                runMarketAnalysis(area, service);
+
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+                    <p class="font-bold">エラー</p>
+                    <p class="text-sm">${error.message}</p>
+                    <p class="text-xs mt-2">バックエンドサーバーが起動していることを確認してください。</p>
+                </div>`;
+            }
+        }
+
+        function displayCompetitorResults(competitors, cached = false) {
+            const resultsDiv = document.getElementById('competitorResults');
+
+            if (competitors.length === 0) {
+                resultsDiv.innerHTML = '<p class="text-center text-slate-400 py-8">競合店舗が見つかりませんでした</p>';
+                return;
+            }
+
+            let html = cached ? '<div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-sm text-blue-800"><i class="fa-solid fa-info-circle mr-2"></i>キャッシュされたデータを表示しています（15分以内）</div>' : '';
+
+            html += '<div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-slate-600 border border-slate-200"><thead class="bg-indigo-50 text-indigo-900 font-bold"><tr><th class="px-4 py-3 border-b">順位</th><th class="px-4 py-3 border-b">店舗名</th><th class="px-4 py-3 border-b">価格</th><th class="px-4 py-3 border-b">口コミ数</th><th class="px-4 py-3 border-b">評価</th><th class="px-4 py-3 border-b">詳細</th></tr></thead><tbody class="divide-y divide-slate-100">';
+
+            competitors.forEach((comp, index) => {
+                html += `<tr class="${index < 3 ? 'bg-amber-50' : ''}">
+                    <td class="px-4 py-3 font-bold">#${comp.rank || index + 1}</td>
+                    <td class="px-4 py-3"><a href="${comp.url}" target="_blank" class="text-indigo-600 hover:underline">${comp.name}</a></td>
+                    <td class="px-4 py-3">${comp.price}</td>
+                    <td class="px-4 py-3">${comp.reviewCount}</td>
+                    <td class="px-4 py-3"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">${comp.rating}</span></td>
+                    <td class="px-4 py-3">
+                        <button onclick="analyzeCompetitorDetail('${comp.url}')" class="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded hover:bg-indigo-200">
+                            詳細分析
+                        </button>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            resultsDiv.innerHTML = html;
+        }
+
+        async function checkRankings() {
+            const keywords = document.getElementById('rankingKeywords').value.trim().split(',').map(k => k.trim()).filter(k => k);
+            const shopName = document.getElementById('rankingStoreSelect').value;
+
+            if (keywords.length === 0) {
+                alert('キーワードを入力してください');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('rankingResults');
+            resultsDiv.innerHTML = '<div class="text-center py-8"><i class="fa-solid fa-spinner fa-spin text-4xl text-amber-600"></i><p class="mt-2 text-slate-600">検索順位を確認中...</p></div>';
+
+            try {
+                const response = await fetch(`${BACKEND_API}/api/ranking/bulk-check`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keywords, shopName })
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                displayRankingResults(result.data);
+
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+                    <p class="font-bold">エラー</p>
+                    <p class="text-sm">${error.message}</p>
+                </div>`;
+            }
+        }
+
+        function displayRankingResults(rankings) {
+            const resultsDiv = document.getElementById('rankingResults');
+
+            let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
+
+            rankings.forEach(rank => {
+                const rankClass = rank.rank === -1 ? 'bg-red-100 border-red-300' : (rank.rank <= 3 ? 'bg-green-100 border-green-300' : (rank.rank <= 10 ? 'bg-amber-100 border-amber-300' : 'bg-slate-100 border-slate-300'));
+                const rankText = rank.rank === -1 ? '圏外' : `${rank.rank}位`;
+
+                html += `<div class="border-2 ${rankClass} rounded-lg p-4">
+                    <p class="text-sm text-slate-600 mb-1">${rank.keyword}</p>
+                    <p class="text-3xl font-bold">${rankText}</p>
+                    <p class="text-xs text-slate-400 mt-2">${new Date(rank.date).toLocaleString('ja-JP')}</p>
+                </div>`;
+            });
+
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        }
+
+        async function analyzeReviews() {
+            const url = document.getElementById('reviewShopUrl').value.trim();
+
+            if (!url) {
+                alert('店舗URLを入力してください');
+                return;
+            }
+
+            if (!checkApiKey()) return;
+
+            const resultsDiv = document.getElementById('reviewAnalysisResults');
+            resultsDiv.innerHTML = '<div class="text-center py-8"><i class="fa-solid fa-spinner fa-spin text-4xl text-green-600"></i><p class="mt-2 text-slate-600">口コミを取得・分析中...</p></div>';
+
+            try {
+                // Fetch reviews from backend
+                const response = await fetch(`${BACKEND_API}/api/reviews/fetch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                // Now analyze with Gemini AI
+                const reviewTexts = result.data.map(r => r.text).join('\n\n');
+                const prompt = `以下の口コミを分析し、以下の形式でJSONを出力してください：
+                {
+                    "sentiment": "positive/neutral/negative",
+                    "strengths": ["強み1", "強み2", "強み3"],
+                    "weaknesses": ["弱み1", "弱み2"],
+                    "keyTopics": ["トピック1", "トピック2"],
+                    "summary": "100文字程度のサマリー"
+                }
+
+                口コミ：
+                ${reviewTexts}`;
+
+                const apiKey = localStorage.getItem("naoru_gemini_api_key");
+                const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                const aiData = await aiResponse.json();
+                const jsonText = aiData.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
+                const analysis = JSON.parse(jsonText);
+
+                displayReviewAnalysis(analysis, result.count);
+
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+                    <p class="font-bold">エラー</p>
+                    <p class="text-sm">${error.message}</p>
+                </div>`;
+            }
+        }
+
+        function displayReviewAnalysis(analysis, count) {
+            const resultsDiv = document.getElementById('reviewAnalysisResults');
+
+            const sentimentColors = {
+                positive: 'green',
+                neutral: 'amber',
+                negative: 'red'
+            };
+            const color = sentimentColors[analysis.sentiment] || 'slate';
+
+            let html = `<div class="bg-${color}-50 border border-${color}-200 rounded-lg p-6 mb-4">
+                <p class="text-sm text-${color}-600 mb-2">総合評価</p>
+                <p class="text-2xl font-bold text-${color}-800">${analysis.sentiment.toUpperCase()}</p>
+                <p class="text-sm text-slate-600 mt-2">分析対象: ${count}件の口コミ</p>
+            </div>`;
+
+            html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div class="bg-green-50 border border-green-200 rounded-lg p-4"><h4 class="font-bold text-green-800 mb-3 flex items-center gap-2"><i class="fa-solid fa-thumbs-up"></i> 強み</h4><ul class="space-y-2">';
+
+            analysis.strengths.forEach(s => {
+                html += `<li class="text-sm text-slate-700 flex items-start gap-2"><i class="fa-solid fa-check text-green-600 mt-1"></i><span>${s}</span></li>`;
+            });
+
+            html += '</ul></div><div class="bg-red-50 border border-red-200 rounded-lg p-4"><h4 class="font-bold text-red-800 mb-3 flex items-center gap-2"><i class="fa-solid fa-thumbs-down"></i> 弱み</h4><ul class="space-y-2">';
+
+            analysis.weaknesses.forEach(w => {
+                html += `<li class="text-sm text-slate-700 flex items-start gap-2"><i class="fa-solid fa-times text-red-600 mt-1"></i><span>${w}</span></li>`;
+            });
+
+            html += '</ul></div></div>';
+
+            html += `<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                <h4 class="font-bold text-blue-800 mb-2">サマリー</h4>
+                <p class="text-sm text-slate-700">${analysis.summary}</p>
+            </div>`;
+
+            resultsDiv.innerHTML = html;
+        }
+
+        async function runMarketAnalysis(area, service) {
+            try {
+                const response = await fetch(`${BACKEND_API}/api/market/analysis`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ area, service })
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                displayMarketAnalysis(result.data);
+
+            } catch (error) {
+                console.error('Market analysis error:', error);
+            }
+        }
+
+        function displayMarketAnalysis(data) {
+            const resultsDiv = document.getElementById('marketAnalysisResults');
+
+            let html = `<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                    <p class="text-sm text-blue-600 mb-1">競合店舗数</p>
+                    <p class="text-3xl font-bold text-blue-800">${data.competitorCount}</p>
+                </div>
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                    <p class="text-sm text-green-600 mb-1">平均価格</p>
+                    <p class="text-3xl font-bold text-green-800">¥${data.averagePrice.toLocaleString()}</p>
+                </div>
+                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+                    <p class="text-sm text-purple-600 mb-1">価格帯</p>
+                    <p class="text-lg font-bold text-purple-800">¥${data.priceRange.min.toLocaleString()} - ¥${data.priceRange.max.toLocaleString()}</p>
+                </div>
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+                    <p class="text-sm text-amber-600 mb-1">平均口コミ数</p>
+                    <p class="text-3xl font-bold text-amber-800">${data.averageReviewCount}</p>
+                </div>
+            </div>`;
+
+            html += '<h4 class="font-bold text-slate-800 mb-3">TOP5競合店舗</h4><div class="space-y-2">';
+
+            data.topShops.forEach((shop, index) => {
+                html += `<div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    <div class="flex items-center gap-3">
+                        <span class="bg-slate-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">${index + 1}</span>
+                        <span class="font-medium">${shop.name}</span>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-slate-800">${shop.price}</p>
+                        <p class="text-xs text-slate-500">${shop.reviewCount} 件</p>
+                    </div>
+                </div>`;
+            });
+
+            html += '</div>';
+
+            resultsDiv.innerHTML = html;
+        }
+
+        // ===========================================
+        // NEW TAB FUNCTIONS: FORECAST
+        // ===========================================
+
+        function initForecastTab() {
+            const forecastSelect = document.getElementById('forecastStoreSelect');
+            forecastSelect.innerHTML = '';
+            masterStores.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.text = `${s.store}店`;
+                forecastSelect.appendChild(opt);
+            });
+
+            runPrediction();
+            initSeasonalityChart();
+            initLTVAnalysis();
+        }
+
+        function runPrediction() {
+            const storeId = parseInt(document.getElementById('forecastStoreSelect').value);
+            const period = parseInt(document.getElementById('forecastPeriod').value);
+
+            if (!storeId && storeId !== 0) return;
+
+            // Simple prediction using linear regression on historical data
+            const historicalData = [];
+            for (let m = 1; m <= 12; m++) {
+                const rec = getMonthlyRecord(storeId, currentTargetYear, m, 'hpb');
+                if (rec.newClients > 0) {
+                    historicalData.push({ month: m, value: rec.newClients });
+                }
+            }
+
+            if (historicalData.length < 3) {
+                document.getElementById('predictionResults').innerHTML = '<p class="text-center text-slate-400 py-8">予測に必要なデータが不足しています（最低3ヶ月分必要）</p>';
+                return;
+            }
+
+            // Calculate trend using simple moving average
+            const avg = historicalData.reduce((sum, d) => sum + d.value, 0) / historicalData.length;
+            const trend = historicalData.length >= 6 ?
+                ((historicalData.slice(-3).reduce((sum, d) => sum + d.value, 0) / 3) -
+                 (historicalData.slice(0, 3).reduce((sum, d) => sum + d.value, 0) / 3)) : 0;
+
+            // Predict future months
+            const predictions = [];
+            for (let i = 1; i <= period; i++) {
+                const predicted = Math.max(0, Math.round(avg + (trend * i)));
+                predictions.push(predicted);
+            }
+
+            // Display results
+            const store = masterStores.find(s => s.id === storeId);
+            let html = `<div class="grid grid-cols-1 md:grid-cols-${period} gap-4">`;
+
+            predictions.forEach((pred, index) => {
+                html += `<div class="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-300 rounded-lg p-6 text-center">
+                    <p class="text-sm text-emerald-600 mb-2">${index + 1}ヶ月後</p>
+                    <p class="text-4xl font-bold text-emerald-800">${pred}</p>
+                    <p class="text-xs text-slate-600 mt-2">予測新規数</p>
+                </div>`;
+            });
+
+            html += '</div>';
+            html += `<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                <p class="text-sm text-blue-800"><i class="fa-solid fa-info-circle mr-2"></i>
+                過去${historicalData.length}ヶ月分のデータから予測しています。トレンド: ${trend > 0 ? '上昇傾向' : trend < 0 ? '下降傾向' : '横ばい'}</p>
+            </div>`;
+
+            document.getElementById('predictionResults').innerHTML = html;
+
+            // Update chart
+            updatePredictionChart(historicalData, predictions);
+        }
+
+        let predictionChart;
+        function updatePredictionChart(historical, predictions) {
+            const labels = [...historical.map(d => `${d.month}月`), ...predictions.map((_, i) => `予測${i+1}`)];
+            const data = [...historical.map(d => d.value), ...predictions];
+            const borderColors = [...Array(historical.length).fill('#10b981'), ...Array(predictions.length).fill('#f59e0b')];
+
+            if (predictionChart) predictionChart.destroy();
+
+            predictionChart = new Chart(document.getElementById('predictionChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '新規数',
+                        data: data,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        segment: {
+                            borderColor: (ctx) => ctx.p0DataIndex >= historical.length - 1 ? '#f59e0b' : '#10b981',
+                            borderDash: (ctx) => ctx.p0DataIndex >= historical.length - 1 ? [5, 5] : []
+                        },
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: '新規数の推移と予測' }
+                    }
+                }
+            });
+        }
+
+        function optimizeBudget() {
+            const targetNew = parseInt(document.getElementById('optTargetNew').value) || 0;
+            const targetRoi = parseInt(document.getElementById('optTargetRoi').value) || 0;
+            const budgetLimit = parseInt(document.getElementById('optBudgetLimit').value) || 0;
+
+            if (!targetNew) {
+                alert('目標新規数を入力してください');
+                return;
+            }
+
+            // Calculate optimal budget allocation across media
+            const mediaList = ['hpb', 'meta', 'honefix', 'flyer'];
+            const mediaPerformance = [];
+
+            activeStoreData.forEach(store => {
+                mediaList.forEach(media => {
+                    const rec = getMonthlyRecord(store.id, currentTargetYear, currentTargetMonth, media);
+                    if (rec.adSpend > 0 && rec.newClients > 0) {
+                        const cpa = rec.adSpend / rec.newClients;
+                        const roi = rec.joins > 0 ? ((50000 * rec.joins) / rec.adSpend) * 100 : 0;
+                        mediaPerformance.push({ media, cpa, roi, efficiency: rec.newClients / rec.adSpend });
+                    }
+                });
+            });
+
+            // Group by media and calculate average
+            const mediaAvg = {};
+            mediaList.forEach(media => {
+                const filtered = mediaPerformance.filter(p => p.media === media);
+                if (filtered.length > 0) {
+                    mediaAvg[media] = {
+                        cpa: filtered.reduce((sum, p) => sum + p.cpa, 0) / filtered.length,
+                        roi: filtered.reduce((sum, p) => sum + p.roi, 0) / filtered.length,
+                        efficiency: filtered.reduce((sum, p) => sum + p.efficiency, 0) / filtered.length
+                    };
+                }
+            });
+
+            // Optimize allocation
+            const sortedMedia = Object.entries(mediaAvg)
+                .sort((a, b) => b[1].efficiency - a[1].efficiency);
+
+            const allocation = [];
+            let remainingNew = targetNew;
+            let totalBudget = 0;
+
+            sortedMedia.forEach(([media, perf]) => {
+                if (remainingNew > 0) {
+                    const allocNew = Math.min(remainingNew, Math.ceil(remainingNew * 0.5));
+                    const allocBudget = Math.round(allocNew * perf.cpa);
+
+                    if (!budgetLimit || (totalBudget + allocBudget) <= budgetLimit) {
+                        allocation.push({
+                            media,
+                            newClients: allocNew,
+                            budget: allocBudget,
+                            cpa: Math.round(perf.cpa),
+                            expectedRoi: Math.round(perf.roi)
+                        });
+                        remainingNew -= allocNew;
+                        totalBudget += allocBudget;
+                    }
+                }
+            });
+
+            displayBudgetOptimization(allocation, totalBudget, targetNew, targetRoi);
+        }
+
+        function displayBudgetOptimization(allocation, totalBudget, targetNew, targetRoi) {
+            const resultsDiv = document.getElementById('budgetOptimizationResults');
+
+            const mediaLabels = { hpb: 'HPB', meta: 'Meta', honefix: 'HONE', flyer: 'チラシ' };
+
+            let html = `<div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-6 mb-6">
+                <h4 class="font-bold text-blue-900 text-lg mb-4">最適化結果</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="text-center">
+                        <p class="text-sm text-blue-600 mb-1">総予算</p>
+                        <p class="text-3xl font-bold text-blue-900">¥${totalBudget.toLocaleString()}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-blue-600 mb-1">予想新規数</p>
+                        <p class="text-3xl font-bold text-blue-900">${allocation.reduce((sum, a) => sum + a.newClients, 0)}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-blue-600 mb-1">平均CPA</p>
+                        <p class="text-3xl font-bold text-blue-900">¥${Math.round(totalBudget / allocation.reduce((sum, a) => sum + a.newClients, 0)).toLocaleString()}</p>
+                    </div>
+                </div>
+            </div>`;
+
+            html += '<h4 class="font-bold text-slate-800 mb-3">媒体別予算配分</h4>';
+            html += '<div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-slate-600 border border-slate-200"><thead class="bg-blue-50 text-blue-900 font-bold"><tr><th class="px-4 py-3 border-b">媒体</th><th class="px-4 py-3 border-b text-right">配分予算</th><th class="px-4 py-3 border-b text-right">予想新規</th><th class="px-4 py-3 border-b text-right">CPA</th><th class="px-4 py-3 border-b text-right">期待ROI</th></tr></thead><tbody class="divide-y divide-slate-100">';
+
+            allocation.forEach(alloc => {
+                html += `<tr>
+                    <td class="px-4 py-3 font-bold">${mediaLabels[alloc.media]}</td>
+                    <td class="px-4 py-3 text-right">¥${alloc.budget.toLocaleString()}</td>
+                    <td class="px-4 py-3 text-right">${alloc.newClients}人</td>
+                    <td class="px-4 py-3 text-right">¥${alloc.cpa.toLocaleString()}</td>
+                    <td class="px-4 py-3 text-right">${alloc.expectedRoi}%</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+
+            resultsDiv.innerHTML = html;
+        }
+
+        let seasonalityChart;
+        function initSeasonalityChart() {
+            // Aggregate data by month across all stores
+            const monthlyData = Array(12).fill(0).map((_, i) => {
+                let total = 0;
+                activeStoreData.forEach(store => {
+                    const rec = getMonthlyRecord(store.id, currentTargetYear, i + 1, 'hpb');
+                    total += rec.newClients || 0;
+                });
+                return total;
+            });
+
+            if (seasonalityChart) seasonalityChart.destroy();
+
+            seasonalityChart = new Chart(document.getElementById('seasonalityChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+                    datasets: [{
+                        label: '新規数',
+                        data: monthlyData,
+                        backgroundColor: monthlyData.map(v => {
+                            const max = Math.max(...monthlyData);
+                            const ratio = v / max;
+                            return `rgba(16, 185, 129, ${ratio})`;
+                        }),
+                        borderColor: '#10b981',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: '月別新規数の推移（シーズナリティ分析）' },
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function initLTVAnalysis() {
+            const resultsDiv = document.getElementById('ltvAnalysisResults');
+
+            const mediaList = ['hpb', 'meta', 'honefix', 'flyer', 'hp', 'referral'];
+            const mediaLabels = { hpb: 'HPB', meta: 'Meta', honefix: 'HONE', flyer: 'チラシ', hp: 'HP', referral: '紹介' };
+            const ASSUMED_LTV = 50000;
+
+            const ltvData = [];
+
+            mediaList.forEach(media => {
+                let totalSpend = 0, totalJoins = 0;
+                activeStoreData.forEach(store => {
+                    const rec = getMonthlyRecord(store.id, currentTargetYear, currentTargetMonth, media);
+                    totalSpend += rec.adSpend || 0;
+                    totalJoins += rec.joins || 0;
+                });
+
+                if (totalJoins > 0) {
+                    const ltv = ASSUMED_LTV * totalJoins;
+                    const roi = totalSpend > 0 ? ((ltv / totalSpend) * 100) : 0;
+                    const profit = ltv - totalSpend;
+
+                    ltvData.push({
+                        media,
+                        label: mediaLabels[media],
+                        ltv,
+                        spend: totalSpend,
+                        profit,
+                        roi: Math.round(roi),
+                        joins: totalJoins
+                    });
+                }
+            });
+
+            ltvData.sort((a, b) => b.roi - a.roi);
+
+            let html = '<div class="overflow-x-auto"><table class="min-w-full text-sm text-left text-slate-600 border border-slate-200"><thead class="bg-yellow-50 text-yellow-900 font-bold"><tr><th class="px-4 py-3 border-b">媒体</th><th class="px-4 py-3 border-b text-right">入会数</th><th class="px-4 py-3 border-b text-right">広告費</th><th class="px-4 py-3 border-b text-right">推定LTV</th><th class="px-4 py-3 border-b text-right">利益</th><th class="px-4 py-3 border-b text-right bg-yellow-100">ROI</th></tr></thead><tbody class="divide-y divide-slate-100">';
+
+            ltvData.forEach(data => {
+                html += `<tr>
+                    <td class="px-4 py-3 font-bold">${data.label}</td>
+                    <td class="px-4 py-3 text-right">${data.joins}人</td>
+                    <td class="px-4 py-3 text-right">¥${data.spend.toLocaleString()}</td>
+                    <td class="px-4 py-3 text-right">¥${data.ltv.toLocaleString()}</td>
+                    <td class="px-4 py-3 text-right ${data.profit > 0 ? 'text-green-700 font-bold' : 'text-red-700'}">¥${data.profit.toLocaleString()}</td>
+                    <td class="px-4 py-3 text-right bg-yellow-50 font-bold">${data.roi}%</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            html += `<p class="text-xs text-slate-400 mt-2">※ LTVは顧客1人あたり¥${ASSUMED_LTV.toLocaleString()}と仮定</p>`;
+
+            resultsDiv.innerHTML = html;
+
+            // Update LTV Chart
+            updateLTVChart(ltvData);
+        }
+
+        let ltvChart;
+        function updateLTVChart(ltvData) {
+            if (ltvChart) ltvChart.destroy();
+
+            ltvChart = new Chart(document.getElementById('ltvChart'), {
+                type: 'bar',
+                data: {
+                    labels: ltvData.map(d => d.label),
+                    datasets: [
+                        { label: '広告費', data: ltvData.map(d => d.spend), backgroundColor: '#f59e0b' },
+                        { label: 'LTV', data: ltvData.map(d => d.ltv), backgroundColor: '#10b981' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: '媒体別 広告費 vs LTV' }
+                    }
+                }
+            });
+        }
+
+        // ===========================================
+        // NEW TAB FUNCTIONS: REPORTS
+        // ===========================================
+
+        function initReportTab() {
+            // Initialize benchmark chart
+            initBenchmarkChart();
+        }
+
+        async function generateExecutiveSummary() {
+            if (!checkApiKey()) return;
+
+            const contentDiv = document.getElementById('executiveSummaryContent');
+            contentDiv.innerHTML = '<div class="text-center py-8"><i class="fa-solid fa-spinner fa-spin text-4xl text-rose-600"></i><p class="mt-2 text-slate-600">AIがサマリーを生成中...</p></div>';
+
+            // Prepare data summary
+            const totalSpend = activeStoreData.reduce((sum, s) => sum + getMonthlyRecord(s.id, currentTargetYear, currentTargetMonth, 'hpb').adSpend, 0);
+            const totalNew = activeStoreData.reduce((sum, s) => sum + s.newClients, 0);
+            const avgCpa = totalNew > 0 ? Math.round(totalSpend / totalNew) : 0;
+            const bestStore = [...activeStoreData].sort((a, b) => a.cpa - b.cpa)[0];
+            const worstStore = [...activeStoreData].sort((a, b) => b.cpa - a.cpa)[0];
+
+            const prompt = `以下のデータから、経営陣向けのエグゼクティブサマリーを作成してください。
+
+【全体実績】
+- 総広告費: ¥${totalSpend.toLocaleString()}
+- 総新規数: ${totalNew}人
+- 平均CPA: ¥${avgCpa.toLocaleString()}
+
+【ベストパフォーマンス】
+- ${bestStore.store}店: CPA ¥${bestStore.cpa.toLocaleString()}
+
+【要改善店舗】
+- ${worstStore.store}店: CPA ¥${worstStore.cpa.toLocaleString()}
+
+【依頼】
+1. 今月のハイライト（3つの重要ポイント）
+2. 課題と改善提案（2つ）
+3. 来月のアクションプラン（3つ）
+
+マークダウン形式で、経営陣が読みやすく、かつ具体的な数値を含めて出力してください。`;
+
+            try {
+                const apiKey = localStorage.getItem("naoru_gemini_api_key");
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                const data = await response.json();
+                const summary = data.candidates[0].content.parts[0].text;
+
+                contentDiv.innerHTML = marked.parse(summary);
+
+            } catch (error) {
+                contentDiv.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+                    <p class="font-bold">エラー</p>
+                    <p class="text-sm">${error.message}</p>
+                </div>`;
+            }
+        }
+
+        let benchmarkRadarChart;
+        function initBenchmarkChart() {
+            // Create radar chart comparing top 5 stores
+            const topStores = [...activeStoreData].sort((a, b) => a.cpa - b.cpa).slice(0, 5);
+
+            if (topStores.length < 2) {
+                document.getElementById('benchmarkTable').innerHTML = '<p class="text-center text-slate-400 py-8">比較に必要なデータが不足しています</p>';
+                return;
+            }
+
+            const datasets = topStores.map((store, index) => {
+                const colors = ['#e57172', '#0668E1', '#9e8125', '#10b981', '#f59e0b'];
+                return {
+                    label: store.store,
+                    data: [
+                        store.newClients,
+                        100 - (store.cpa / 10000 * 100), // Normalize CPA (lower is better, so invert)
+                        store.rate,
+                        (store.topPv / 1000) || 0,
+                        (store.couponPv / 1000) || 0
+                    ],
+                    borderColor: colors[index],
+                    backgroundColor: colors[index] + '40',
+                    pointBackgroundColor: colors[index]
+                };
+            });
+
+            if (benchmarkRadarChart) benchmarkRadarChart.destroy();
+
+            benchmarkRadarChart = new Chart(document.getElementById('benchmarkRadarChart'), {
+                type: 'radar',
+                data: {
+                    labels: ['新規数', 'CPA効率', '入会率', 'TOP PV (K)', 'Cpn PV (K)'],
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // Benchmark table
+            let html = '<div class="overflow-y-auto max-h-[350px]"><table class="min-w-full text-sm text-left text-slate-600 border border-slate-200"><thead class="bg-slate-100 text-slate-700 font-bold sticky top-0"><tr><th class="px-3 py-2 border-b">店舗</th><th class="px-3 py-2 border-b text-right">CPA</th><th class="px-3 py-2 border-b text-right">率</th><th class="px-3 py-2 border-b text-center">評価</th></tr></thead><tbody class="divide-y divide-slate-100">';
+
+            topStores.forEach((store, index) => {
+                const medals = ['🥇', '🥈', '🥉', '4th', '5th'];
+                html += `<tr>
+                    <td class="px-3 py-2 font-bold">${medals[index]} ${store.store}</td>
+                    <td class="px-3 py-2 text-right">¥${store.cpa.toLocaleString()}</td>
+                    <td class="px-3 py-2 text-right">${store.rate}%</td>
+                    <td class="px-3 py-2 text-center"><span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">優秀</span></td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            document.getElementById('benchmarkTable').innerHTML = html;
+        }
+
+        function exportToPDF() {
+            alert('PDF出力機能は開発中です。\n現在は、ブラウザの印刷機能（Ctrl+P）をご利用ください。');
+        }
+
+        function exportToExcel() {
+            // Simple CSV export
+            const csvData = [];
+            csvData.push(['店舗名', 'オーナー', 'CPA', '入会率', '新規数', '入会数']);
+
+            activeStoreData.forEach(store => {
+                const rec = getMonthlyRecord(store.id, currentTargetYear, currentTargetMonth, 'hpb');
+                csvData.push([store.store, store.owner, store.cpa, store.rate, rec.newClients, rec.joins]);
+            });
+
+            const csv = csvData.map(row => row.join(',')).join('\n');
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `naoru_report_${currentTargetYear}_${currentTargetMonth}.csv`;
+            link.click();
+        }
+
+        function exportToJSON() {
+            const exportData = {
+                stores: masterStores,
+                period: { year: currentTargetYear, month: currentTargetMonth },
+                data: activeStoreData.map(store => {
+                    const rec = getMonthlyRecord(store.id, currentTargetYear, currentTargetMonth, 'hpb');
+                    return {
+                        store: store.store,
+                        owner: store.owner,
+                        cpa: store.cpa,
+                        rate: store.rate,
+                        newClients: rec.newClients,
+                        joins: rec.joins,
+                        adSpend: rec.adSpend
+                    };
+                }),
+                timestamp: new Date().toISOString()
+            };
+
+            const json = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `naoru_data_${currentTargetYear}_${currentTargetMonth}.json`;
+            link.click();
+        }
+
+        function setupAutomatedReporting() {
+            const email = document.getElementById('reportEmail').value.trim();
+            const frequency = document.getElementById('reportFrequency').value;
+
+            if (!email) {
+                alert('メールアドレスを入力してください');
+                return;
+            }
+
+            // This would require backend implementation
+            alert(`自動レポート配信を設定しました:\n\n宛先: ${email}\n頻度: ${frequency}\n\n※この機能はバックエンドサーバーの実装が必要です。`);
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             checkApiKey();
             switchTab('dashboard');

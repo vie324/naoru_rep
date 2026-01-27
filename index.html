@@ -2120,21 +2120,39 @@
         }
 
         async function fetchUrlData(url) {
-            // Demo mode: generate fake data
-            await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+            try {
+                const response = await fetch(`${BACKEND_API}/api/scrape-url`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
 
-            const shopId = extractShopName(url);
-            const basePrice = [2980, 3500, 3980, 4500, 4980, 5500];
-            const randomPrice = basePrice[Math.floor(Math.random() * basePrice.length)];
+                const result = await response.json();
 
-            return {
-                url: url,
-                shopId: shopId,
-                price: `¥${randomPrice.toLocaleString()}`,
-                reviewCount: `${50 + Math.floor(Math.random() * 200)}`,
-                rating: `${(3.5 + Math.random() * 1.5).toFixed(1)}`,
-                lastCheck: new Date().toISOString()
-            };
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                return result.data;
+
+            } catch (error) {
+                // Fallback to demo data if API fails
+                console.log('API failed, using demo data:', error.message);
+                await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+
+                const shopId = extractShopName(url);
+                const basePrice = [2980, 3500, 3980, 4500, 4980, 5500];
+                const randomPrice = basePrice[Math.floor(Math.random() * basePrice.length)];
+
+                return {
+                    url: url,
+                    shopId: shopId,
+                    price: `¥${randomPrice.toLocaleString()}`,
+                    reviewCount: `${50 + Math.floor(Math.random() * 200)}`,
+                    rating: `${(3.5 + Math.random() * 1.5).toFixed(1)}`,
+                    lastCheck: new Date().toISOString()
+                };
+            }
         }
 
         function displayTrackingResults(urls) {

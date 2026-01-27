@@ -1,0 +1,12 @@
+{
+  "name": "naoru-rep",
+  "version": "1.0.0",
+  "description": "NAORU Beauty Analysis Tool with Real Scraping",
+  "dependencies": {
+    "chrome-aws-lambda": "^10.1.0",
+    "puppeteer-core": "^21.6.1"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
